@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const { niche, minFollowers, maxFollowers, location } = req.query;
+    const { niche, minFollowers, maxFollowers, location, platform } = req.query;
     let query = db.collection('influencers');
 
     if (niche) query = query.where('niche', '==', niche);
@@ -19,8 +19,22 @@ router.get('/', requireAuth, async (req, res, next) => {
 
     if (minFollowers) results = results.filter(i => (i.followerCount || 0) >= Number(minFollowers));
     if (maxFollowers) results = results.filter(i => (i.followerCount || 0) <= Number(maxFollowers));
+    if (platform) results = results.filter(i => (i.platform || '').toLowerCase() === platform.toLowerCase());
 
     res.json({ influencers: results });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /api/influencers/featured/list - top creators by follower count, for the Home feed */
+router.get('/featured/list', requireAuth, async (req, res, next) => {
+  try {
+    const snap = await db.collection('influencers').get();
+    const influencers = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.followerCount || 0) - (a.followerCount || 0))
+      .slice(0, 6);
+    res.json({ influencers });
   } catch (err) {
     next(err);
   }
@@ -45,6 +59,10 @@ router.put(
     body('niche').optional().trim(),
     body('followerCount').optional().isInt({ min: 0 }),
     body('location').optional().trim(),
+    body('platform').optional().isIn(['Instagram', 'YouTube', 'Facebook', 'TikTok', 'Other']),
+    body('photoUrl').optional({ checkFalsy: true }).trim().isURL({ require_protocol: false, require_tld: false }),
+    body('instagramUrl').optional({ checkFalsy: true }).trim(),
+    body('youtubeUrl').optional({ checkFalsy: true }).trim(),
   ],
   async (req, res, next) => {
     const errors = validationResult(req);
