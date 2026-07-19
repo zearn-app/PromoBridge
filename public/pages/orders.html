@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Orders — PromoConnect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen">
+
+<header class="pc-nav sticky top-0 z-40">
+  <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+    <a href="/pages/home.html" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect</a>
+  </nav>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-6">
+  <h1 id="pageTitle" class="font-display text-2xl font-semibold mb-1">Orders</h1>
+  <p id="pageSubtitle" class="text-sm text-slate-500 mb-6"></p>
+
+  <div class="flex gap-1 overflow-x-auto border-b mb-5" style="border-color:var(--line)">
+    <button class="tab-btn active" data-status="">All</button>
+    <button class="tab-btn" data-status="pending">Pending</button>
+    <button class="tab-btn" data-status="accepted">Accepted</button>
+    <button class="tab-btn" data-status="in_progress">In progress</button>
+    <button class="tab-btn" data-status="completed">Completed</button>
+    <button class="tab-btn" data-status="cancelled">Cancelled</button>
+  </div>
+
+  <div id="ordersList" class="space-y-3"><p class="empty-state">Loading…</p></div>
+</main>
+
+<script type="module">
+  import { api, requireLogin, showToast } from '/js/api.js';
+  import { renderNav } from '/js/nav.js';
+
+  let role = null;
+  let allRequests = [];
+  let activeFilter = '';
+
+  requireLogin(async () => {
+    await renderNav('orders');
+    const { user } = await api('/auth/me');
+    role = user.role;
+
+    document.getElementById('pageTitle').textContent = role === 'brand' ? 'Orders given' : 'Orders received';
+    document.getElementById('pageSubtitle').textContent = role === 'brand'
+      ? 'Every promotion request you have sent to a creator.'
+      : 'Every promotion request sent to you by a brand.';
+
+    await loadOrders();
+  });
+
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter = btn.dataset.status;
+      render();
+    });
+  });
+
+  async function loadOrders() {
+    try {
+      const { requests } = await api('/requests/mine/list');
+      allRequests = requests;
+      render();
+    } catch (err) {
+      document.getElementById('ordersList').innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  function render() {
+    const container = document.getElementById('ordersList');
+    const list = activeFilter ? allRequests.filter(r => r.status === activeFilter) : allRequests;
+
+    if (!list.length) {
+      container.innerHTML = '<p class="empty-state">No orders in this view yet.</p>';
+      return;
+    }
+
+    container.innerHTML = list.map(orderCard).join('');
+
+    container.querySelectorAll('.acceptBtn').forEach(b => b.addEventListener('click', () => respond(b.dataset.id, 'accepted')));
+    container.querySelectorAll('.declineBtn').forEach(b => b.addEventListener('click', () => respond(b.dataset.id, 'declined')));
+    container.querySelectorAll('.progressBtn').forEach(b => b.addEventListener('click', () => progress(b.dataset.id, b.dataset.target)));
+    container.querySelectorAll('.cancelBtn').forEach(b => b.addEventListener('click', () => progress(b.dataset.id, 'cancelled')));
+    container.querySelectorAll('.payBtn').forEach(b => b.addEventListener('click', () => payForRequest(b.dataset.id)));
+    container.querySelectorAll('.messageBtn').forEach(b => b.addEventListener('click', () => {
+      const otherUid = role === 'brand' ? b.dataset.influencerId : b.dataset.brandId;
+      window.location.href = `/pages/messages.html?to=${otherUid}&requestId=${b.dataset.id}`;
+    }));
+  }
+
+  function orderCard(r) {
+    const otherLabel = role === 'brand' ? 'Creator' : 'Brand';
+    const canCancel = ['pending', 'accepted', 'in_progress'].includes(r.status);
+
+    let actions = '';
+    if (role === 'influencer' && r.status === 'pending') {
+      actions = `
+        <button class="acceptBtn btn btn-success btn-sm" data-id="${r.id}">Accept</button>
+        <button class="declineBtn btn btn-danger btn-sm" data-id="${r.id}">Decline</button>`;
+    }
+    if (role === 'brand' && r.status === 'accepted') {
+      actions = `
+        <button class="payBtn btn btn-brass btn-sm" data-id="${r.id}">Pay now</button>
+        <button class="progressBtn btn btn-outline btn-sm" data-id="${r.id}" data-target="in_progress">Mark in progress</button>`;
+    }
+    if (role === 'brand' && r.status === 'in_progress') {
+      actions += `<button class="progressBtn btn btn-success btn-sm" data-id="${r.id}" data-target="completed">Mark completed</button>`;
+    }
+    if (canCancel) {
+      actions += `<button class="cancelBtn btn btn-ghost btn-sm" data-id="${r.id}">Cancel</button>`;
+    }
+    actions += `<button class="messageBtn btn btn-ghost btn-sm" data-id="${r.id}" data-influencer-id="${r.influencerId}" data-brand-id="${r.brandId}">Message</button>`;
+
+    return `
+      <div class="receipt">
+        <div class="receipt-side">
+          <p class="receipt-eyebrow">${otherLabel} · Offer</p>
+          <p class="receipt-amount mt-1">₹${r.amount}</p>
+          <p class="text-xs text-slate-500 mt-1">${escapeHtml(r.message || '')}</p>
+        </div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-side flex flex-col justify-between">
+          <div>
+            <p class="receipt-eyebrow">Status</p>
+            <span class="stamp stamp-${r.status} mt-1">${r.status.replace('_', ' ')}</span>
+          </div>
+          <div class="flex gap-2 mt-3 flex-wrap">${actions}</div>
+        </div>
+      </div>`;
+  }
+
+  async function respond(id, status) {
+    try {
+      await api(`/requests/${id}`, { method: 'PATCH', body: { status } });
+      showToast(`Order ${status}`);
+      await loadOrders();
+    } catch (err) { showToast(err.message, true); }
+  }
+
+  async function progress(id, status) {
+    try {
+      await api(`/requests/${id}/progress`, { method: 'PATCH', body: { status } });
+      showToast(`Order ${status.replace('_', ' ')}`);
+      await loadOrders();
+    } catch (err) { showToast(err.message, true); }
+  }
+
+  async function payForRequest(requestId) {
+    try {
+      const order = await api('/payments/create-order', { method: 'POST', body: { requestId } });
+      const rzp = new Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.orderId,
+        name: 'PromoConnect',
+        description: 'Influencer promotion payment',
+        handler: async (response) => {
+          try {
+            await api('/payments/verify', {
+              method: 'POST',
+              body: {
+                paymentId: order.paymentId,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+            });
+            showToast('Payment successful');
+            await loadOrders();
+          } catch (err) { showToast(err.message, true); }
+        },
+        theme: { color: '#b8863c' },
+      });
+      rzp.open();
+    } catch (err) { showToast(err.message, true); }
+  }
+
+  function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+</script>
+</body>
+</html>
