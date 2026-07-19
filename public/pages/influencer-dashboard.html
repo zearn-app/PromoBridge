@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Creator Dashboard — PromoConnect</title>
+<title>Dashboard — PromoConnect</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css" />
 </head>
@@ -11,268 +11,74 @@
 
 <header class="pc-nav sticky top-0 z-40">
   <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
-    <a href="/" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect</a>
-    <div class="flex items-center gap-4">
-      <a href="/pages/browse-campaigns.html" class="pc-navlink">Browse Campaigns</a>
-      <span id="userName" class="text-sm text-slate-500 hide-mobile"></span>
-      <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
-    </div>
+    <a href="/pages/home.html" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect</a>
+    <a href="/pages/profile.html" class="pc-navlink">&larr; Back to profile</a>
   </nav>
 </header>
 
-<main class="max-w-6xl mx-auto px-4 py-8 space-y-8">
+<main class="max-w-4xl mx-auto px-4 py-8 space-y-8">
+  <h1 class="font-display text-2xl font-semibold">Dashboard</h1>
 
-  <!-- Stats -->
-  <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-    <div class="stat-tile">
-      <p class="stat-label">Followers</p>
-      <p id="statFollowers" class="stat-value">–</p>
-    </div>
-    <div class="stat-tile">
-      <p class="stat-label">Pending requests</p>
-      <p id="statPending" class="stat-value">–</p>
-    </div>
-    <div class="stat-tile">
-      <p class="stat-label">Completed promotions</p>
-      <p id="statCompleted" class="stat-value">–</p>
-    </div>
-    <div class="stat-tile">
-      <p class="stat-label">Earnings released</p>
-      <p id="statEarnings" class="stat-value">–</p>
-    </div>
+  <section class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+    <div class="stat-tile"><p class="stat-label">Total orders</p><p id="statTotal" class="stat-value">–</p></div>
+    <div class="stat-tile"><p class="stat-label">Active orders</p><p id="statActive" class="stat-value">–</p></div>
+    <div class="stat-tile"><p class="stat-label">Completed orders</p><p id="statCompleted" class="stat-value">–</p></div>
+    <div class="stat-tile"><p class="stat-label">Earnings released</p><p id="statEarnings" class="stat-value">–</p></div>
+    <div class="stat-tile"><p class="stat-label">Pending payout</p><p id="statPendingPayout" class="stat-value">–</p></div>
+    <div class="stat-tile"><p class="stat-label">Cancelled orders</p><p id="statCancelled" class="stat-value">–</p></div>
   </section>
 
-  <div class="grid lg:grid-cols-3 gap-8">
-    <!-- Profile -->
-    <section class="panel p-6 lg:col-span-1">
-      <h2 class="font-display text-lg font-semibold mb-4">Your profile</h2>
-      <form id="profileForm" class="space-y-3">
-        <div>
-          <label class="field-label" for="bio">Bio</label>
-          <textarea id="bio" rows="3" class="field"></textarea>
-        </div>
-        <div>
-          <label class="field-label" for="niche">Niche</label>
-          <input id="niche" placeholder="e.g. fashion, tech, fitness" class="field" />
-        </div>
-        <div>
-          <label class="field-label" for="followerCount">Follower count</label>
-          <input id="followerCount" type="number" min="0" class="field" />
-        </div>
-        <div>
-          <label class="field-label" for="location">Location</label>
-          <input id="location" class="field" />
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">Save profile</button>
-      </form>
-
-      <hr class="perforated my-5" />
-
-      <h3 class="font-display font-semibold text-sm mb-3">Add to your gallery</h3>
-      <form id="galleryForm" class="space-y-2">
-        <input id="galleryUrl" placeholder="Image / video / post URL" class="field" required />
-        <select id="galleryType" class="field">
-          <option value="image">Image</option>
-          <option value="video">Video</option>
-          <option value="link">Link</option>
-        </select>
-        <input id="galleryCaption" placeholder="Caption (optional)" class="field" />
-        <button type="submit" class="btn btn-outline btn-block">Add to gallery</button>
-      </form>
-
-      <div id="galleryGrid" class="grid grid-cols-2 gap-2 mt-4"></div>
-    </section>
-
-    <!-- Requests -->
-    <section class="panel p-6 lg:col-span-2">
-      <h2 class="font-display text-lg font-semibold mb-4">Promotion requests</h2>
-      <div id="requestsList" class="space-y-3">
-        <p class="empty-state">Loading…</p>
-      </div>
-    </section>
-  </div>
-
-  <!-- Withdrawals -->
   <section class="panel p-6">
-    <h2 class="font-display text-lg font-semibold mb-4">Withdrawals</h2>
+    <h2 class="font-display text-lg font-semibold mb-4">Order pipeline</h2>
+    <div id="pipeline" class="space-y-2"></div>
+  </section>
+
+  <section class="panel p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-display text-lg font-semibold">Withdrawals</h2>
+      <a href="/pages/profile.html" class="text-xs" style="color:var(--brass-dark)">Manage profile &rarr;</a>
+    </div>
     <form id="withdrawForm" class="flex flex-wrap gap-3 max-w-md mb-5">
       <input id="withdrawAmount" type="number" min="1" step="0.01" placeholder="Amount (₹)" required class="field flex-1" />
       <button type="submit" class="btn btn-brass">Request withdrawal</button>
     </form>
-    <p class="text-xs text-slate-500 mb-4">Reviewed and transferred manually by the admin after verification.</p>
     <div id="withdrawalsList" class="space-y-2"></div>
   </section>
-
 </main>
 
-<!-- Report modal -->
-<div id="reportModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
-  <div class="panel p-6 w-full max-w-sm">
-    <h3 class="font-display font-semibold text-lg mb-1">Report a problem</h3>
-    <p class="text-xs text-slate-500 mb-4">This goes straight to the admin team for review.</p>
-    <form id="reportForm" class="space-y-3">
-      <textarea id="reportReason" rows="4" placeholder="What happened?" required class="field"></textarea>
-      <div class="flex gap-2">
-        <button type="submit" class="btn btn-danger flex-1">Submit report</button>
-        <button type="button" id="closeReportModal" class="btn btn-outline flex-1">Cancel</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <script type="module">
-  import { auth, signOut } from '/js/firebase-config.js';
   import { api, requireLogin, showToast } from '/js/api.js';
 
-  let currentUser;
-  let reportTargetUid = null;
-  let reportTargetRequestId = null;
-
-  requireLogin(async (user) => {
-    currentUser = user;
-    document.getElementById('userName').textContent = user.displayName || user.email;
-    await loadProfile();
-    await loadRequests();
-    await loadPayments();
+  requireLogin(async () => {
+    await loadStats();
     await loadWithdrawals();
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await signOut(auth);
-    window.location.href = '/login.html';
-  });
+  const STAGES = ['pending', 'accepted', 'in_progress', 'completed', 'declined', 'cancelled'];
 
-  async function loadProfile() {
-    try {
-      const { influencer } = await api(`/influencers/${currentUser.uid}`);
-      document.getElementById('bio').value = influencer.bio || '';
-      document.getElementById('niche').value = influencer.niche || '';
-      document.getElementById('followerCount').value = influencer.followerCount || 0;
-      document.getElementById('location').value = influencer.location || '';
-      document.getElementById('statFollowers').textContent = (influencer.followerCount || 0).toLocaleString();
-      renderGallery(influencer.gallery || []);
-    } catch (err) {
-      console.warn('No profile yet:', err.message);
-    }
-  }
-
-  function renderGallery(items) {
-    const grid = document.getElementById('galleryGrid');
-    if (!items.length) {
-      grid.innerHTML = '<p class="empty-state col-span-2 py-4">No gallery items yet — add a sample post above.</p>';
-      return;
-    }
-    grid.innerHTML = items.slice().reverse().map((item) => `
-      <a href="${escapeAttr(item.url)}" target="_blank" rel="noopener" class="block border rounded-lg p-3 text-xs hover:bg-slate-50" style="border-color:var(--line)">
-        <span class="stamp stamp-open mb-2">${escapeHtml(item.type || 'link')}</span>
-        <p class="mt-2 text-slate-600 truncate">${escapeHtml(item.caption || item.url)}</p>
-      </a>
-    `).join('');
-  }
-
-  document.getElementById('profileForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-      await api('/influencers/profile/update', {
-        method: 'PUT',
-        body: {
-          bio: document.getElementById('bio').value,
-          niche: document.getElementById('niche').value,
-          followerCount: Number(document.getElementById('followerCount').value || 0),
-          location: document.getElementById('location').value,
-        },
-      });
-      showToast('Profile saved');
-    } catch (err) {
-      showToast(err.message, true);
-    }
-  });
-
-  document.getElementById('galleryForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-      await api('/influencers/gallery/add', {
-        method: 'POST',
-        body: {
-          url: document.getElementById('galleryUrl').value,
-          type: document.getElementById('galleryType').value,
-          caption: document.getElementById('galleryCaption').value,
-        },
-      });
-      showToast('Added to gallery');
-      e.target.reset();
-      await loadProfile();
-    } catch (err) {
-      showToast(err.message, true);
-    }
-  });
-
-  async function loadRequests() {
-    const container = document.getElementById('requestsList');
+  async function loadStats() {
     try {
       const { requests } = await api('/requests/mine/list');
-      document.getElementById('statPending').textContent = requests.filter(r => r.status === 'pending').length;
-      document.getElementById('statCompleted').textContent = requests.filter(r => r.status === 'paid').length;
+      const counts = Object.fromEntries(STAGES.map(s => [s, requests.filter(r => r.status === s).length]));
 
-      if (!requests.length) {
-        container.innerHTML = '<p class="empty-state">No requests yet. Brands will find you through search once your profile is filled in.</p>';
-        return;
-      }
+      document.getElementById('statTotal').textContent = requests.length;
+      document.getElementById('statActive').textContent = counts.accepted + counts.in_progress;
+      document.getElementById('statCompleted').textContent = counts.completed;
+      document.getElementById('statCancelled').textContent = counts.cancelled;
 
-      container.innerHTML = requests.map(r => `
-        <div class="receipt">
-          <div class="receipt-side">
-            <p class="receipt-eyebrow">Offer</p>
-            <p class="receipt-amount mt-1">₹${r.amount}</p>
-            <p class="text-xs text-slate-500 mt-1">${escapeHtml(r.message || 'Promotion request')}</p>
-          </div>
-          <div class="receipt-divider"></div>
-          <div class="receipt-side flex flex-col justify-between">
-            <div>
-              <p class="receipt-eyebrow">Status</p>
-              <span class="stamp stamp-${r.status} mt-1">${r.status}</span>
-            </div>
-            <div class="flex gap-2 mt-3 flex-wrap">
-              ${r.status === 'pending' ? `
-                <button class="acceptBtn btn btn-success btn-sm" data-id="${r.id}">Accept</button>
-                <button class="declineBtn btn btn-danger btn-sm" data-id="${r.id}">Decline</button>
-              ` : `
-                <button class="reportBtn btn btn-ghost btn-sm" data-id="${r.id}" data-uid="${r.brandId}">Report a problem</button>
-              `}
-            </div>
-          </div>
-        </div>
-      `).join('');
+      document.getElementById('pipeline').innerHTML = STAGES.map(s => `
+        <div class="flex items-center justify-between text-sm border-b py-2" style="border-color:var(--line)">
+          <span class="stamp stamp-${s}">${s.replace('_', ' ')}</span>
+          <span class="font-mono">${counts[s]}</span>
+        </div>`).join('');
 
-      container.querySelectorAll('.acceptBtn').forEach(btn =>
-        btn.addEventListener('click', () => respond(btn.dataset.id, 'accepted')));
-      container.querySelectorAll('.declineBtn').forEach(btn =>
-        btn.addEventListener('click', () => respond(btn.dataset.id, 'declined')));
-      container.querySelectorAll('.reportBtn').forEach(btn =>
-        btn.addEventListener('click', () => openReportModal(btn.dataset.uid, btn.dataset.id)));
-    } catch (err) {
-      container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
-    }
-  }
-
-  async function respond(id, status) {
-    try {
-      await api(`/requests/${id}`, { method: 'PATCH', body: { status } });
-      showToast(`Request ${status}`);
-      await loadRequests();
+      const { payments } = await api('/payments/mine/list');
+      const released = payments.filter(p => p.status === 'released').reduce((s, p) => s + p.influencerShare, 0);
+      const pendingPayout = payments.filter(p => p.status === 'paid').reduce((s, p) => s + p.influencerShare, 0);
+      document.getElementById('statEarnings').textContent = `₹${released.toFixed(2)}`;
+      document.getElementById('statPendingPayout').textContent = `₹${pendingPayout.toFixed(2)}`;
     } catch (err) {
       showToast(err.message, true);
-    }
-  }
-
-  async function loadPayments() {
-    try {
-      const { payments } = await api('/payments/mine/list');
-      const total = payments.filter(p => p.status === 'paid' || p.status === 'released')
-        .reduce((s, p) => s + (p.influencerShare || 0), 0);
-      document.getElementById('statEarnings').textContent = `₹${total.toFixed(2)}`;
-    } catch (err) {
-      console.warn(err.message);
     }
   }
 
@@ -284,8 +90,7 @@
         <div class="flex items-center justify-between border-b py-2 text-sm" style="border-color:var(--line)">
           <span class="font-mono">₹${w.amount}</span>
           <span class="stamp stamp-${w.status}">${w.status}</span>
-        </div>
-      `).join('') : '<p class="empty-state">No withdrawal requests yet.</p>';
+        </div>`).join('') : '<p class="empty-state">No withdrawal requests yet.</p>';
     } catch (err) {
       container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
     }
@@ -294,10 +99,7 @@
   document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
-      await api('/payments/withdraw', {
-        method: 'POST',
-        body: { amount: Number(document.getElementById('withdrawAmount').value) },
-      });
+      await api('/payments/withdraw', { method: 'POST', body: { amount: Number(document.getElementById('withdrawAmount').value) } });
       showToast('Withdrawal request submitted');
       e.target.reset();
       await loadWithdrawals();
@@ -305,43 +107,6 @@
       showToast(err.message, true);
     }
   });
-
-  function openReportModal(uid, requestId) {
-    reportTargetUid = uid;
-    reportTargetRequestId = requestId;
-    document.getElementById('reportModal').classList.remove('hidden');
-    document.getElementById('reportModal').classList.add('flex');
-  }
-  document.getElementById('closeReportModal').addEventListener('click', () => {
-    document.getElementById('reportModal').classList.add('hidden');
-  });
-  document.getElementById('reportForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-      await api('/reports', {
-        method: 'POST',
-        body: {
-          againstUid: reportTargetUid,
-          requestId: reportTargetRequestId,
-          reason: document.getElementById('reportReason').value,
-        },
-      });
-      showToast('Report submitted');
-      document.getElementById('reportModal').classList.add('hidden');
-      e.target.reset();
-    } catch (err) {
-      showToast(err.message, true);
-    }
-  });
-
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-  function escapeAttr(str) {
-    return (str || '').replace(/"/g, '&quot;');
-  }
 </script>
 </body>
 </html>
