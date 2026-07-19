@@ -311,6 +311,100 @@ body {
   .hide-mobile { display: none; }
 }
 
+/* ---------- Bottom nav (primary app navigation) ---------- */
+.bottom-nav {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  background: var(--paper-raised);
+  border-top: 1px solid var(--line);
+  display: flex;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0.55rem 0 0.5rem;
+  color: var(--ink-soft);
+  font-size: 0.65rem;
+  font-weight: 600;
+  position: relative;
+}
+.bottom-nav-item.active { color: var(--brass-dark); }
+.bottom-nav-item svg { width: 22px; height: 22px; }
+.nav-dot {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 16px);
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--brick);
+  border: 1.5px solid var(--paper-raised);
+}
+body.has-bottom-nav { padding-bottom: 4.2rem; }
+
+/* ---------- Filter chips ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  background: var(--paper-raised);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+/* ---------- Discovery card (Home / Search) ---------- */
+.discover-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.discover-card-image {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  background: var(--paper);
+  display: block;
+}
+
+/* ---------- Message bubbles ---------- */
+.bubble {
+  max-width: 78%;
+  padding: 0.55rem 0.85rem;
+  border-radius: 14px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.bubble-mine {
+  background: var(--ink);
+  color: #fff;
+  margin-left: auto;
+  border-bottom-right-radius: 4px;
+}
+.bubble-theirs {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  margin-right: auto;
+  border-bottom-left-radius: 4px;
+}
+.bubble-time {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem;
+  opacity: 0.6;
+  margin-top: 0.25rem;
+  display: block;
+}
+
 /* ---------- Hero signature: ledger stamp mark ---------- */
 .stamp-mark {
   display: inline-flex;
