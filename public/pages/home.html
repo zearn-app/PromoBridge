@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Home — PromoConnect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen">
+
+<header class="pc-nav sticky top-0 z-40">
+  <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+    <a href="/pages/home.html" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect</a>
+    <span id="userName" class="text-sm text-slate-500"></span>
+  </nav>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-6 space-y-10">
+
+  <!-- Search bar -->
+  <form id="searchForm" class="flex gap-2">
+    <input id="q" placeholder="Search influencers, brands, campaigns, categories…" class="field flex-1" />
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+
+  <!-- Filter chips -->
+  <div class="flex gap-2 overflow-x-auto pb-1" id="chipRow">
+    <button class="chip active" data-cat="">All</button>
+    <button class="chip" data-cat="Fashion">Fashion</button>
+    <button class="chip" data-cat="Tech">Tech</button>
+    <button class="chip" data-cat="Fitness">Fitness</button>
+    <button class="chip" data-cat="Beauty">Beauty</button>
+    <button class="chip" data-cat="Food">Food</button>
+    <button class="chip" data-cat="Travel">Travel</button>
+    <button class="chip" data-cat="Gaming">Gaming</button>
+  </div>
+
+  <!-- Trending campaigns -->
+  <section>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-display text-xl font-semibold">Trending campaigns</h2>
+      <div class="flex items-center gap-3">
+        <button id="postCampaignBtn" class="btn btn-brass btn-sm hidden">+ Post a campaign</button>
+        <a href="/pages/search.html" class="text-sm" style="color:var(--brass-dark)">See all &rarr;</a>
+      </div>
+    </div>
+    <div id="trendingCampaigns" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <p class="empty-state">Loading…</p>
+    </div>
+  </section>
+
+  <!-- Featured influencers -->
+  <section>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-display text-xl font-semibold">Featured creators</h2>
+      <a href="/pages/search.html" class="text-sm" style="color:var(--brass-dark)">See all &rarr;</a>
+    </div>
+    <div id="featuredInfluencers" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <p class="empty-state">Loading…</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- Post campaign modal (brand only) -->
+<div id="campaignModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+  <div class="panel p-6 w-full max-w-sm">
+    <h3 class="font-display font-semibold text-lg mb-4">Post a campaign</h3>
+    <form id="campaignForm" class="space-y-2">
+      <input id="title" placeholder="Campaign title" required class="field" />
+      <textarea id="description" placeholder="Campaign details" rows="3" required class="field"></textarea>
+      <select id="category" class="field">
+        <option value="">Category</option>
+        <option>Fashion</option><option>Tech</option><option>Fitness</option>
+        <option>Beauty</option><option>Food</option><option>Travel</option><option>Gaming</option>
+      </select>
+      <select id="platform" class="field">
+        <option value="">Platform</option>
+        <option>Instagram</option><option>YouTube</option><option>Facebook</option><option>TikTok</option><option>Other</option>
+      </select>
+      <input id="campaignBudget" type="number" min="0" placeholder="Budget (₹)" required class="field" />
+      <input id="timeline" placeholder="Timeline (e.g. 2 weeks)" class="field" />
+      <input id="imageUrl" placeholder="Cover image URL (optional)" class="field" />
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-brass flex-1">Post</button>
+        <button type="button" id="closeCampaignModal" class="btn btn-outline flex-1">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, signOut } from '/js/firebase-config.js';
+  import { api, requireLogin, showToast } from '/js/api.js';
+  import { renderNav } from '/js/nav.js';
+
+  requireLogin(async (user) => {
+    document.getElementById('userName').textContent = user.displayName || user.email;
+    await renderNav('home');
+    await loadTrending();
+    await loadFeatured();
+
+    const { user: appUser } = await api('/auth/me');
+    if (appUser.role === 'brand') {
+      document.getElementById('postCampaignBtn').classList.remove('hidden');
+    }
+  });
+
+  document.getElementById('postCampaignBtn').addEventListener('click', () => {
+    document.getElementById('campaignModal').classList.remove('hidden');
+    document.getElementById('campaignModal').classList.add('flex');
+  });
+  document.getElementById('closeCampaignModal').addEventListener('click', () => {
+    document.getElementById('campaignModal').classList.add('hidden');
+  });
+  document.getElementById('campaignForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/campaigns', {
+        method: 'POST',
+        body: {
+          title: document.getElementById('title').value,
+          description: document.getElementById('description').value,
+          category: document.getElementById('category').value || undefined,
+          platform: document.getElementById('platform').value || undefined,
+          budget: Number(document.getElementById('campaignBudget').value),
+          timeline: document.getElementById('timeline').value,
+          imageUrl: document.getElementById('imageUrl').value || undefined,
+        },
+      });
+      showToast('Campaign posted');
+      document.getElementById('campaignModal').classList.add('hidden');
+      e.target.reset();
+      await loadTrending();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  document.getElementById('chipRow').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+    chip.classList.add('active');
+    window.location.href = `/pages/search.html?category=${encodeURIComponent(chip.dataset.cat)}`;
+  });
+
+  document.getElementById('searchForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = document.getElementById('q').value.trim();
+    window.location.href = `/pages/search.html?q=${encodeURIComponent(q)}`;
+  });
+
+  async function loadTrending() {
+    const container = document.getElementById('trendingCampaigns');
+    try {
+      const { campaigns } = await api('/campaigns/trending/list');
+      container.innerHTML = campaigns.length ? campaigns.map(campaignCard).join('') :
+        '<p class="empty-state col-span-full">No open campaigns yet.</p>';
+    } catch (err) {
+      container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  async function loadFeatured() {
+    const container = document.getElementById('featuredInfluencers');
+    try {
+      const { influencers } = await api('/influencers/featured/list');
+      container.innerHTML = influencers.length ? influencers.map(influencerCard).join('') :
+        '<p class="empty-state col-span-full">No creators have set up a profile yet.</p>';
+    } catch (err) {
+      container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  function campaignCard(c) {
+    return `
+      <div class="discover-card card-hover">
+        ${c.imageUrl ? `<img src="${escapeAttr(c.imageUrl)}" class="discover-card-image" alt="" />` : `<div class="discover-card-image flex items-center justify-center text-xs text-slate-400">No image</div>`}
+        <div class="p-4">
+          <div class="flex items-center gap-2 mb-1">
+            ${c.category ? `<span class="chip" style="pointer-events:none">${escapeHtml(c.category)}</span>` : ''}
+            ${c.platform ? `<span class="text-xs text-slate-400">${escapeHtml(c.platform)}</span>` : ''}
+          </div>
+          <p class="font-display font-semibold">${escapeHtml(c.title)}</p>
+          <p class="font-mono text-sm mt-1">₹${c.budget}</p>
+        </div>
+      </div>`;
+  }
+
+  function influencerCard(i) {
+    return `
+      <div class="discover-card card-hover p-4">
+        <div class="flex items-center gap-3">
+          <img src="${escapeAttr(i.photoUrl || '')}" onerror="this.style.display='none'" class="w-12 h-12 rounded-full object-cover bg-slate-100" alt="" />
+          <div>
+            <p class="font-display font-semibold">${escapeHtml(i.displayName || 'Creator')}</p>
+            <p class="text-xs text-slate-500">${escapeHtml(i.niche || 'General')} · ${(i.followerCount || 0).toLocaleString()} followers</p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+  function escapeAttr(str) { return (str || '').replace(/"/g, '&quot;'); }
+</script>
+</body>
+</html>
