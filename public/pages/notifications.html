@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Notifications — PromoConnect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen">
+
+<header class="pc-nav sticky top-0 z-40">
+  <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+    <a href="/pages/home.html" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect</a>
+    <button id="readAllBtn" class="btn btn-outline btn-sm">Mark all read</button>
+  </nav>
+</header>
+
+<main class="max-w-2xl mx-auto px-4 py-6">
+  <h1 class="font-display text-2xl font-semibold mb-6">Notifications</h1>
+  <div id="notifList" class="space-y-2"><p class="empty-state">Loading…</p></div>
+</main>
+
+<script type="module">
+  import { api, requireLogin, showToast } from '/js/api.js';
+  import { renderNav } from '/js/nav.js';
+
+  const TYPE_LABEL = {
+    new_request: 'New order',
+    request_update: 'Order update',
+    payment_received: 'Payment',
+    funds_released: 'Payment',
+    withdrawal_update: 'Payment',
+    new_message: 'Message',
+  };
+
+  requireLogin(async () => {
+    await renderNav('notifications');
+    await load();
+  });
+
+  async function load() {
+    const container = document.getElementById('notifList');
+    try {
+      const { notifications } = await api('/notifications/mine');
+      container.innerHTML = notifications.length ? notifications.map(n => `
+        <div class="panel p-4 flex items-start justify-between gap-3 ${n.read ? '' : 'cursor-pointer'}" data-id="${n.id}" data-read="${n.read}">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="chip" style="pointer-events:none">${TYPE_LABEL[n.data?.type] || 'Update'}</span>
+              ${!n.read ? '<span class="stamp stamp-pending">new</span>' : ''}
+            </div>
+            <p class="text-sm font-medium">${escapeHtml(n.title)}</p>
+            <p class="text-xs text-slate-500 mt-1">${escapeHtml(n.body)}</p>
+            <p class="text-xs text-slate-400 mt-1 font-mono">${new Date(n.createdAt).toLocaleString()}</p>
+          </div>
+        </div>
+      `).join('') : '<p class="empty-state">Nothing yet — new orders, payments, and messages will show up here.</p>';
+
+      container.querySelectorAll('[data-read="false"]').forEach(el =>
+        el.addEventListener('click', () => markRead(el.dataset.id)));
+    } catch (err) {
+      container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  async function markRead(id) {
+    try {
+      await api(`/notifications/${id}/read`, { method: 'PATCH' });
+      await load();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  document.getElementById('readAllBtn').addEventListener('click', async () => {
+    try {
+      await api('/notifications/read-all', { method: 'PATCH' });
+      showToast('All marked as read');
+      await load();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+</script>
+</body>
+</html>
