@@ -49,8 +49,7 @@
     try {
       const { user } = await api('/auth/me');
       if (user.role === 'admin') window.location.href = '/pages/admin-dashboard.html';
-      else if (user.role === 'brand') window.location.href = '/pages/brand-dashboard.html';
-      else window.location.href = '/pages/influencer-dashboard.html';
+      else window.location.href = '/pages/home.html';
     } catch (err) {
       document.getElementById('errorMsg').textContent =
         'No profile found for this account. Please sign up first.';
