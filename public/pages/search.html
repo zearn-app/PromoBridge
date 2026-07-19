@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Search — PromoConnect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen">
+
+<header class="pc-nav sticky top-0 z-40">
+  <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+    <a href="/pages/home.html" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect</a>
+  </nav>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-6 space-y-5">
+  <h1 class="font-display text-2xl font-semibold">Search</h1>
+
+  <form id="filterForm" class="panel p-4 space-y-3">
+    <input id="q" placeholder="Keyword — name, title, category…" class="field" />
+    <div class="grid sm:grid-cols-4 gap-3">
+      <select id="category" class="field">
+        <option value="">Any category</option>
+        <option>Fashion</option><option>Tech</option><option>Fitness</option>
+        <option>Beauty</option><option>Food</option><option>Travel</option><option>Gaming</option>
+      </select>
+      <select id="platform" class="field">
+        <option value="">Any platform</option>
+        <option>Instagram</option><option>YouTube</option><option>Facebook</option><option>TikTok</option><option>Other</option>
+      </select>
+      <input id="minBudget" type="number" placeholder="Min budget" class="field" />
+      <input id="maxBudget" type="number" placeholder="Max budget" class="field" />
+    </div>
+    <input id="location" placeholder="Location" class="field" />
+    <button type="submit" class="btn btn-primary btn-block">Apply filters</button>
+  </form>
+
+  <div class="flex gap-1 border-b" style="border-color:var(--line)">
+    <button class="tab-btn active" data-tab="campaigns">Campaigns</button>
+    <button class="tab-btn" data-tab="influencers">Creators</button>
+  </div>
+
+  <div id="campaignsPanel" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+  <div id="influencersPanel" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 hidden"></div>
+</main>
+
+<!-- Send request modal (brand only) -->
+<div id="requestModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+  <div class="panel p-6 w-full max-w-sm">
+    <h3 class="font-display font-semibold text-lg mb-4">Send promotion request</h3>
+    <form id="requestForm" class="space-y-3">
+      <input id="reqAmount" type="number" min="0" step="0.01" placeholder="Offer amount (₹)" required class="field" />
+      <textarea id="reqMessage" placeholder="Message about the campaign" rows="3" class="field"></textarea>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-brass flex-1">Send</button>
+        <button type="button" id="closeRequestModal" class="btn btn-outline flex-1">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { api, requireLogin, showToast } from '/js/api.js';
+  import { renderNav } from '/js/nav.js';
+
+  const params = new URLSearchParams(window.location.search);
+  let role = null;
+  let targetInfluencerId = null;
+
+  requireLogin(async () => {
+    await renderNav('search');
+    if (params.get('q')) document.getElementById('q').value = params.get('q');
+    if (params.get('category')) document.getElementById('category').value = params.get('category');
+    const { user } = await api('/auth/me');
+    role = user.role;
+    await search();
+  });
+
+  document.getElementById('closeRequestModal').addEventListener('click', () => {
+    document.getElementById('requestModal').classList.add('hidden');
+  });
+  document.getElementById('requestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/requests', {
+        method: 'POST',
+        body: {
+          influencerId: targetInfluencerId,
+          amount: Number(document.getElementById('reqAmount').value),
+          message: document.getElementById('reqMessage').value,
+        },
+      });
+      showToast('Request sent!');
+      document.getElementById('requestModal').classList.add('hidden');
+      e.target.reset();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('campaignsPanel').classList.toggle('hidden', btn.dataset.tab !== 'campaigns');
+      document.getElementById('influencersPanel').classList.toggle('hidden', btn.dataset.tab !== 'influencers');
+    });
+  });
+
+  document.getElementById('filterForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    search();
+  });
+
+  async function search() {
+    const cp = document.getElementById('campaignsPanel');
+    const ip = document.getElementById('influencersPanel');
+    cp.innerHTML = '<p class="empty-state">Loading…</p>';
+    ip.innerHTML = '<p class="empty-state">Loading…</p>';
+
+    const p = new URLSearchParams();
+    const q = document.getElementById('q').value.trim();
+    const category = document.getElementById('category').value;
+    const platform = document.getElementById('platform').value;
+    const minBudget = document.getElementById('minBudget').value;
+    const maxBudget = document.getElementById('maxBudget').value;
+    const location = document.getElementById('location').value.trim();
+    if (q) p.set('q', q);
+    if (category) p.set('category', category);
+    if (platform) p.set('platform', platform);
+    if (minBudget) p.set('minBudget', minBudget);
+    if (maxBudget) p.set('maxBudget', maxBudget);
+    if (location) p.set('location', location);
+
+    try {
+      const { campaigns, influencers } = await api(`/search?${p.toString()}`);
+      cp.innerHTML = campaigns.length ? campaigns.map(campaignCard).join('') : '<p class="empty-state col-span-full">No campaigns match.</p>';
+      ip.innerHTML = influencers.length ? influencers.map(influencerCard).join('') : '<p class="empty-state col-span-full">No creators match.</p>';
+
+      ip.querySelectorAll('.requestBtn').forEach(btn =>
+        btn.addEventListener('click', () => {
+          targetInfluencerId = btn.dataset.id;
+          document.getElementById('requestModal').classList.remove('hidden');
+          document.getElementById('requestModal').classList.add('flex');
+        }));
+    } catch (err) {
+      cp.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  function campaignCard(c) {
+    return `
+      <div class="discover-card card-hover">
+        ${c.imageUrl ? `<img src="${escapeAttr(c.imageUrl)}" class="discover-card-image" alt="" />` : `<div class="discover-card-image flex items-center justify-center text-xs text-slate-400">No image</div>`}
+        <div class="p-4">
+          <p class="font-display font-semibold">${escapeHtml(c.title)}</p>
+          <p class="text-xs text-slate-500 mt-1">${escapeHtml(c.category || '')} ${c.platform ? '· ' + escapeHtml(c.platform) : ''}</p>
+          <p class="font-mono text-sm mt-2">₹${c.budget}</p>
+        </div>
+      </div>`;
+  }
+
+  function influencerCard(i) {
+    return `
+      <div class="discover-card card-hover p-4">
+        <p class="font-display font-semibold">${escapeHtml(i.displayName || 'Creator')}</p>
+        <p class="text-xs text-slate-500 mt-1">${escapeHtml(i.niche || 'General')} · ${escapeHtml(i.location || '')}</p>
+        <p class="font-mono text-sm mt-2">${(i.followerCount || 0).toLocaleString()} followers</p>
+        ${role === 'brand' ? `<button class="requestBtn btn btn-primary btn-block btn-sm mt-3" data-id="${i.id}">Send request</button>` : ''}
+      </div>`;
+  }
+
+  function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str ?? ''; return d.innerHTML; }
+  function escapeAttr(str) { return (str || '').replace(/"/g, '&quot;'); }
+</script>
+</body>
+</html>
