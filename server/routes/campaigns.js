@@ -17,6 +17,9 @@ router.post(
     body('budget').isFloat({ min: 0 }),
     body('targetAudience').optional().trim(),
     body('timeline').optional().trim(),
+    body('category').optional().trim(),
+    body('platform').optional().isIn(['Instagram', 'YouTube', 'Facebook', 'TikTok', 'Other']),
+    body('imageUrl').optional({ checkFalsy: true }).trim().isURL({ require_protocol: false, require_tld: false }),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -43,7 +46,7 @@ router.post(
 /** GET /api/campaigns - browse open campaigns (influencers filter by industry/budget/duration) */
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const { industry, minBudget, maxBudget } = req.query;
+    const { industry, category, platform, minBudget, maxBudget } = req.query;
     let query = db.collection('campaigns').where('status', '==', 'open');
     const snap = await query.get();
 
@@ -51,10 +54,26 @@ router.get('/', requireAuth, async (req, res) => {
     if (minBudget) results = results.filter(c => Number(c.budget) >= Number(minBudget));
     if (maxBudget) results = results.filter(c => Number(c.budget) <= Number(maxBudget));
     if (industry) results = results.filter(c => (c.industry || '').toLowerCase() === industry.toLowerCase());
+    if (category) results = results.filter(c => (c.category || '').toLowerCase() === category.toLowerCase());
+    if (platform) results = results.filter(c => (c.platform || '').toLowerCase() === platform.toLowerCase());
 
+    results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json({ campaigns: results });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch campaigns' });
+  }
+});
+
+/** GET /api/campaigns/trending/list - most recently posted open campaigns, for the Home feed */
+router.get('/trending/list', requireAuth, async (req, res) => {
+  try {
+    const snap = await db.collection('campaigns').where('status', '==', 'open').get();
+    const campaigns = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 6);
+    res.json({ campaigns });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch trending campaigns' });
   }
 });
 
