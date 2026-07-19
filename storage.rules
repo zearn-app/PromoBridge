@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Users upload directly to Storage from the client (profile photos,
+// logos, gallery media) since Storage doesn't support server-side
+// upload proxying as easily as Firestore. Each user may only write to
+// their own folder, keyed by their Firebase Auth uid. Anyone signed in
+// can read, since these are public-facing profile assets.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*|video/.*');
+    }
+  }
+}

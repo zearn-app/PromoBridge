@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Browse Campaigns — PromoConnect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen">
+
+<header class="pc-nav sticky top-0 z-40">
+  <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+    <a href="/" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect</a>
+    <a href="/pages/influencer-dashboard.html" class="pc-navlink">&larr; Back to dashboard</a>
+  </nav>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-8">
+  <h1 class="font-display text-3xl font-semibold mb-6">Open campaigns</h1>
+
+  <form id="filterForm" class="panel p-4 mb-6 grid sm:grid-cols-4 gap-3">
+    <input id="fIndustry" placeholder="Industry" class="field" />
+    <input id="fMinBudget" type="number" placeholder="Min budget" class="field" />
+    <input id="fMaxBudget" type="number" placeholder="Max budget" class="field" />
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+
+  <div id="results" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <p class="empty-state">Loading…</p>
+  </div>
+</main>
+
+<script type="module">
+  import { api, requireLogin } from '/js/api.js';
+
+  requireLogin(async () => { await search(); });
+
+  document.getElementById('filterForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    search();
+  });
+
+  async function search() {
+    const results = document.getElementById('results');
+    results.innerHTML = '<p class="empty-state">Loading…</p>';
+
+    const params = new URLSearchParams();
+    const industry = document.getElementById('fIndustry').value.trim();
+    const minBudget = document.getElementById('fMinBudget').value;
+    const maxBudget = document.getElementById('fMaxBudget').value;
+    if (industry) params.set('industry', industry);
+    if (minBudget) params.set('minBudget', minBudget);
+    if (maxBudget) params.set('maxBudget', maxBudget);
+
+    try {
+      const { campaigns } = await api(`/campaigns?${params.toString()}`);
+      results.innerHTML = campaigns.length ? campaigns.map(renderCard).join('') :
+        '<p class="empty-state col-span-full">No open campaigns match those filters.</p>';
+    } catch (err) {
+      results.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  function renderCard(c) {
+    return `
+      <div class="panel p-5 card-hover">
+        <p class="font-display font-semibold text-lg">${escapeHtml(c.title)}</p>
+        <p class="text-sm text-slate-600 mt-2">${escapeHtml((c.description || '').slice(0, 120))}</p>
+        <p class="font-mono text-sm font-medium mt-3">Budget: ₹${c.budget}</p>
+        <p class="text-xs text-slate-500 mt-1">${escapeHtml(c.timeline || '')} ${c.targetAudience ? '· ' + escapeHtml(c.targetAudience) : ''}</p>
+      </div>`;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>

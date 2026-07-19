@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign up — PromoConnect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md">
+  <a href="/" class="pc-logo text-xl block text-center mb-6">Promo<span class="dot">•</span>Connect</a>
+
+  <div class="panel p-8">
+    <h1 class="font-display text-2xl font-semibold mb-1">Create your account</h1>
+    <p class="text-sm text-slate-500 mb-6">Join as a brand or a creator.</p>
+
+    <div class="flex gap-2 mb-6" id="roleToggle">
+      <button data-role="influencer" class="role-btn btn btn-outline flex-1">Creator</button>
+      <button data-role="brand" class="role-btn btn btn-outline flex-1">Brand</button>
+    </div>
+
+    <form id="signupForm" class="space-y-4">
+      <div>
+        <label class="field-label" for="displayName">Full name / company name</label>
+        <input id="displayName" type="text" required class="field" />
+      </div>
+      <div>
+        <label class="field-label" for="email">Email</label>
+        <input id="email" type="email" required class="field" />
+      </div>
+      <div>
+        <label class="field-label" for="password">Password</label>
+        <input id="password" type="password" required minlength="6" placeholder="Min. 6 characters" class="field" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Create account</button>
+    </form>
+
+    <div class="my-5 flex items-center gap-3 text-xs text-slate-400">
+      <div class="h-px bg-slate-200 flex-1"></div> OR <div class="h-px bg-slate-200 flex-1"></div>
+    </div>
+
+    <button id="googleBtn" class="btn btn-outline btn-block">Continue with Google</button>
+
+    <p class="mt-6 text-sm text-center text-slate-500">
+      Already have an account? <a href="/login.html" class="font-medium" style="color:var(--brass-dark)">Log in</a>
+    </p>
+    <p id="errorMsg" class="mt-3 text-sm text-center" style="color:var(--brick)"></p>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, googleProvider, signInWithPopup, createUserWithEmailAndPassword } from '/js/firebase-config.js';
+  import { api, showToast } from '/js/api.js';
+
+  const params = new URLSearchParams(window.location.search);
+  let selectedRole = params.get('role') === 'brand' ? 'brand' : 'influencer';
+
+  function paintRoleButtons() {
+    document.querySelectorAll('.role-btn').forEach((btn) => {
+      const active = btn.dataset.role === selectedRole;
+      btn.className = `role-btn btn flex-1 ${active ? 'btn-primary' : 'btn-outline'}`;
+    });
+  }
+  paintRoleButtons();
+
+  document.querySelectorAll('.role-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectedRole = btn.dataset.role;
+      paintRoleButtons();
+    });
+  });
+
+  async function registerOnBackend(idToken, displayName) {
+    await api('/auth/register', { method: 'POST', body: { idToken, role: selectedRole, displayName } });
+  }
+
+  function redirectToDashboard() {
+    window.location.href = selectedRole === 'brand' ? '/pages/brand-dashboard.html' : '/pages/influencer-dashboard.html';
+  }
+
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const displayName = document.getElementById('displayName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const idToken = await cred.user.getIdToken();
+      await registerOnBackend(idToken, displayName);
+      showToast('Account created!');
+      redirectToDashboard();
+    } catch (err) {
+      document.getElementById('errorMsg').textContent = err.message;
+    }
+  });
+
+  document.getElementById('googleBtn').addEventListener('click', async () => {
+    try {
+      const cred = await signInWithPopup(auth, googleProvider);
+      const idToken = await cred.user.getIdToken();
+      try {
+        await registerOnBackend(idToken, cred.user.displayName || 'New User');
+      } catch (regErr) {
+        if (!regErr.message.includes('already registered')) throw regErr;
+      }
+      redirectToDashboard();
+    } catch (err) {
+      document.getElementById('errorMsg').textContent = err.message;
+    }
+  });
+</script>
+</body>
+</html>

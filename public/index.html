@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PromoConnect — The ledger between brands and creators</title>
+<meta name="description" content="PromoConnect holds the payment, verifies the work, and releases the funds — so brands and creators can do business with strangers." />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="text-slate-800">
+
+<header class="pc-nav sticky top-0 z-40">
+  <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+    <a href="/" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect</a>
+    <div class="flex items-center gap-2">
+      <a href="/login.html" class="btn btn-ghost">Log in</a>
+      <a href="/signup.html" class="btn btn-primary">Sign up</a>
+    </div>
+  </nav>
+</header>
+
+<!-- Hero -->
+<section class="max-w-6xl mx-auto px-4 pt-16 pb-20 sm:pt-24 sm:pb-28">
+  <div class="max-w-3xl">
+    <span class="stamp-mark mb-6">Escrow · Verified · Released</span>
+    <h1 class="font-display text-4xl sm:text-6xl font-semibold leading-[1.05] mt-4">
+      Two strangers.<br />One deal.<br /><span style="color:var(--brass-dark)">A ledger they can both trust.</span>
+    </h1>
+    <p class="mt-6 text-lg text-slate-600 max-w-xl">
+      A brand and a creator have never met, and money has to change hands anyway.
+      PromoConnect holds the payment, confirms the work landed, and only then
+      releases it — with every step logged.
+    </p>
+    <div class="mt-9 flex flex-wrap gap-4">
+      <a href="/signup.html?role=brand" class="btn btn-brass text-base px-6 py-3">Post a campaign</a>
+      <a href="/signup.html?role=influencer" class="btn btn-outline text-base px-6 py-3">Get discovered</a>
+    </div>
+  </div>
+</section>
+
+<!-- Receipt-style stat strip -->
+<section class="max-w-6xl mx-auto px-4 pb-16">
+  <div class="receipt">
+    <div class="receipt-side">
+      <p class="receipt-eyebrow">What the brand sends</p>
+      <p class="font-display text-2xl mt-2">One payment, held in escrow</p>
+      <p class="text-sm text-slate-600 mt-2">Paid up front through Razorpay. Nothing reaches the creator until the work is verified.</p>
+    </div>
+    <div class="receipt-divider"></div>
+    <div class="receipt-side">
+      <p class="receipt-eyebrow">What the creator gets</p>
+      <p class="font-display text-2xl mt-2">Their share, minus commission</p>
+      <p class="text-sm text-slate-600 mt-2">Released by an admin once the promotion is confirmed — and payable out on request.</p>
+    </div>
+  </div>
+</section>
+
+<!-- How it works — a real sequence, so numbering earns its place -->
+<section class="max-w-6xl mx-auto px-4 py-16 border-t" style="border-color:var(--line)">
+  <h2 class="font-display text-3xl font-semibold mb-2">How a deal moves through the ledger</h2>
+  <p class="text-slate-600 mb-10 max-w-xl">Four steps, in order — nothing skips ahead.</p>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div>
+      <p class="font-mono text-sm text-slate-400">01</p>
+      <h3 class="font-semibold mt-2">Post &amp; discover</h3>
+      <p class="text-sm text-slate-600 mt-2">Brands post a campaign or search creators by niche, followers, and location.</p>
+    </div>
+    <div>
+      <p class="font-mono text-sm text-slate-400">02</p>
+      <h3 class="font-semibold mt-2">Request &amp; accept</h3>
+      <p class="text-sm text-slate-600 mt-2">The brand sends an offer. The creator accepts or declines — no surprises.</p>
+    </div>
+    <div>
+      <p class="font-mono text-sm text-slate-400">03</p>
+      <h3 class="font-semibold mt-2">Pay into escrow</h3>
+      <p class="text-sm text-slate-600 mt-2">Funds move to PromoConnect the moment the offer is accepted, held safely.</p>
+    </div>
+    <div>
+      <p class="font-mono text-sm text-slate-400">04</p>
+      <h3 class="font-semibold mt-2">Verify &amp; release</h3>
+      <p class="text-sm text-slate-600 mt-2">Admin confirms delivery, releases the creator's share, and logs it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Trust / security -->
+<section class="max-w-6xl mx-auto px-4 py-16 border-t" style="border-color:var(--line)">
+  <div class="grid sm:grid-cols-3 gap-8">
+    <div class="panel p-6">
+      <p class="stamp stamp-released mb-3">Verified</p>
+      <h3 class="font-semibold text-lg">Nothing pays out blind</h3>
+      <p class="text-sm text-slate-600 mt-2">A human admin checks every promotion before funds are released — not an algorithm guessing.</p>
+    </div>
+    <div class="panel p-6">
+      <p class="stamp stamp-accepted mb-3">Logged</p>
+      <h3 class="font-semibold text-lg">Every action has a paper trail</h3>
+      <p class="text-sm text-slate-600 mt-2">Payments, releases, and withdrawals are all recorded in a transaction ledger either side can review.</p>
+    </div>
+    <div class="panel p-6">
+      <p class="stamp stamp-paid mb-3">Transparent</p>
+      <h3 class="font-semibold text-lg">Commission stated up front</h3>
+      <p class="text-sm text-slate-600 mt-2">The platform's cut is shown on every deal before you pay — no line-item surprises later.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="max-w-6xl mx-auto px-4 py-20 border-t" style="border-color:var(--line)">
+  <div class="panel p-10 sm:p-14 text-center" style="background:var(--ink)">
+    <h2 class="font-display text-3xl sm:text-4xl font-semibold" style="color:#fff">Ready to open a ledger?</h2>
+    <p class="mt-3" style="color:#c7cad4">Free to join. Pay only when a deal actually happens.</p>
+    <div class="mt-8 flex flex-wrap justify-center gap-4">
+      <a href="/signup.html?role=brand" class="btn btn-brass text-base px-6 py-3">I'm a brand</a>
+      <a href="/signup.html?role=influencer" class="btn text-base px-6 py-3" style="background:#fff;color:var(--ink)">I'm a creator</a>
+    </div>
+  </div>
+</section>
+
+<footer class="border-t py-10" style="border-color:var(--line)">
+  <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+    <span class="pc-logo">Promo<span class="dot">•</span>Connect</span>
+    <div class="flex gap-6">
+      <a href="/login.html" class="pc-navlink">Log in</a>
+      <a href="/signup.html" class="pc-navlink">Sign up</a>
+    </div>
+    <span>&copy; 2026 PromoConnect</span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Find Creators — PromoConnect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen">
+
+<header class="pc-nav sticky top-0 z-40">
+  <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+    <a href="/" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect</a>
+    <a href="/pages/brand-dashboard.html" class="pc-navlink">&larr; Back to dashboard</a>
+  </nav>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-8">
+  <h1 class="font-display text-3xl font-semibold mb-6">Find creators</h1>
+
+  <form id="filterForm" class="panel p-4 mb-6 grid sm:grid-cols-5 gap-3">
+    <input id="fNiche" placeholder="Niche (e.g. tech)" class="field" />
+    <input id="fLocation" placeholder="Location" class="field" />
+    <input id="fMinFollowers" type="number" placeholder="Min followers" class="field" />
+    <input id="fMaxFollowers" type="number" placeholder="Max followers" class="field" />
+    <button type="submit" class="btn btn-primary">Search</button>
+  </form>
+
+  <div id="results" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <p class="empty-state">Loading…</p>
+  </div>
+</main>
+
+<!-- Request modal -->
+<div id="requestModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+  <div class="panel p-6 w-full max-w-sm">
+    <h3 class="font-display font-semibold text-lg mb-4">Send promotion request</h3>
+    <form id="requestForm" class="space-y-3">
+      <input id="reqAmount" type="number" min="0" step="0.01" placeholder="Offer amount (₹)" required class="field" />
+      <textarea id="reqMessage" placeholder="Message about the campaign" rows="3" class="field"></textarea>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-brass flex-1">Send</button>
+        <button type="button" id="closeModal" class="btn btn-outline flex-1">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { api, requireLogin, showToast } from '/js/api.js';
+
+  requireLogin(async () => { await search(); });
+
+  let targetInfluencerId = null;
+
+  document.getElementById('filterForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    search();
+  });
+
+  async function search() {
+    const results = document.getElementById('results');
+    results.innerHTML = '<p class="empty-state">Loading…</p>';
+
+    const params = new URLSearchParams();
+    const niche = document.getElementById('fNiche').value.trim();
+    const location = document.getElementById('fLocation').value.trim();
+    const minF = document.getElementById('fMinFollowers').value;
+    const maxF = document.getElementById('fMaxFollowers').value;
+    if (niche) params.set('niche', niche);
+    if (location) params.set('location', location);
+    if (minF) params.set('minFollowers', minF);
+    if (maxF) params.set('maxFollowers', maxF);
+
+    try {
+      const { influencers } = await api(`/influencers?${params.toString()}`);
+      results.innerHTML = influencers.length ? influencers.map(renderCard).join('') :
+        '<p class="empty-state col-span-full">No creators match those filters yet.</p>';
+
+      results.querySelectorAll('.requestBtn').forEach(btn =>
+        btn.addEventListener('click', () => openModal(btn.dataset.id)));
+    } catch (err) {
+      results.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  function renderCard(inf) {
+    return `
+      <div class="panel p-5 card-hover">
+        <p class="font-display font-semibold text-lg">${escapeHtml(inf.displayName || 'Creator')}</p>
+        <p class="text-xs text-slate-500 mt-1">${escapeHtml(inf.niche || 'General')} · ${escapeHtml(inf.location || 'Unknown location')}</p>
+        <p class="text-sm mt-3 text-slate-600">${escapeHtml((inf.bio || 'No bio yet.').slice(0, 120))}</p>
+        <p class="font-mono text-sm font-medium mt-3">${(inf.followerCount || 0).toLocaleString()} followers</p>
+        <button class="requestBtn btn btn-primary btn-block mt-4" data-id="${inf.id}">
+          Send request
+        </button>
+      </div>`;
+  }
+
+  function openModal(id) {
+    targetInfluencerId = id;
+    document.getElementById('requestModal').classList.remove('hidden');
+    document.getElementById('requestModal').classList.add('flex');
+  }
+
+  document.getElementById('closeModal').addEventListener('click', () => {
+    document.getElementById('requestModal').classList.add('hidden');
+  });
+
+  document.getElementById('requestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/requests', {
+        method: 'POST',
+        body: {
+          influencerId: targetInfluencerId,
+          amount: Number(document.getElementById('reqAmount').value),
+          message: document.getElementById('reqMessage').value,
+        },
+      });
+      showToast('Request sent!');
+      document.getElementById('requestModal').classList.add('hidden');
+      e.target.reset();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>

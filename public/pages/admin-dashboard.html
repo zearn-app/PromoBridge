@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — PromoConnect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen">
+
+<header class="pc-nav sticky top-0 z-40">
+  <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+    <a href="/" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect <span class="text-xs font-normal text-slate-400 font-sans">/ Admin</span></a>
+    <button id="logoutBtn" class="btn btn-outline btn-sm">Log out</button>
+  </nav>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+
+  <!-- Overview -->
+  <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div class="stat-tile">
+      <p class="stat-label">Collected</p>
+      <p id="ovCollected" class="stat-value" style="font-size:1.2rem">–</p>
+    </div>
+    <div class="stat-tile">
+      <p class="stat-label">Commission</p>
+      <p id="ovCommission" class="stat-value" style="font-size:1.2rem">–</p>
+    </div>
+    <div class="stat-tile">
+      <p class="stat-label">Pending payouts</p>
+      <p id="ovPending" class="stat-value" style="font-size:1.2rem">–</p>
+    </div>
+    <div class="stat-tile">
+      <p class="stat-label">Total users</p>
+      <p id="ovUsers" class="stat-value" style="font-size:1.2rem">–</p>
+    </div>
+    <div class="stat-tile">
+      <p class="stat-label">Active users</p>
+      <p id="ovActive" class="stat-value" style="font-size:1.2rem">–</p>
+    </div>
+    <div class="stat-tile">
+      <p class="stat-label">Open reports</p>
+      <p id="ovReports" class="stat-value" style="font-size:1.2rem">–</p>
+    </div>
+  </section>
+
+  <!-- Tabs -->
+  <div class="flex gap-1 overflow-x-auto border-b" style="border-color:var(--line)">
+    <button class="tab-btn active" data-tab="users">Users</button>
+    <button class="tab-btn" data-tab="payments">Payments</button>
+    <button class="tab-btn" data-tab="withdrawals">Withdrawals</button>
+    <button class="tab-btn" data-tab="transactions">Transaction ledger</button>
+    <button class="tab-btn" data-tab="reports">Reports</button>
+    <button class="tab-btn" data-tab="audit">Audit log</button>
+    <button class="tab-btn" data-tab="settings">Settings</button>
+  </div>
+
+  <!-- Users tab -->
+  <section data-panel="users" class="panel p-6">
+    <div class="flex flex-wrap gap-3 mb-4">
+      <input id="userSearch" placeholder="Search name or email…" class="field flex-1 min-w-[180px]" />
+      <select id="userRoleFilter" class="field w-auto">
+        <option value="">All roles</option>
+        <option value="influencer">Creator</option>
+        <option value="brand">Brand</option>
+        <option value="admin">Admin</option>
+      </select>
+      <select id="userStatusFilter" class="field w-auto">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="deactivated">Deactivated</option>
+      </select>
+    </div>
+    <div id="usersList" class="space-y-2"><p class="empty-state">Loading…</p></div>
+  </section>
+
+  <!-- Payments tab -->
+  <section data-panel="payments" class="panel p-6 hidden">
+    <h2 class="font-display text-lg font-semibold mb-4">Verify &amp; release</h2>
+    <div id="paymentsList" class="space-y-3"><p class="empty-state">Loading…</p></div>
+  </section>
+
+  <!-- Withdrawals tab -->
+  <section data-panel="withdrawals" class="panel p-6 hidden">
+    <h2 class="font-display text-lg font-semibold mb-4">Withdrawal requests</h2>
+    <div id="withdrawalsList" class="space-y-3"><p class="empty-state">Loading…</p></div>
+  </section>
+
+  <!-- Transactions tab -->
+  <section data-panel="transactions" class="panel p-6 hidden overflow-x-auto">
+    <h2 class="font-display text-lg font-semibold mb-4">Transaction ledger</h2>
+    <table class="pc-table">
+      <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th><th>Parties</th></tr></thead>
+      <tbody id="transactionsBody"></tbody>
+    </table>
+    <p id="transactionsEmpty" class="empty-state hidden">No transactions yet.</p>
+  </section>
+
+  <!-- Reports tab -->
+  <section data-panel="reports" class="panel p-6 hidden">
+    <h2 class="font-display text-lg font-semibold mb-4">Reports</h2>
+    <div id="reportsList" class="space-y-3"><p class="empty-state">Loading…</p></div>
+  </section>
+
+  <!-- Audit log tab -->
+  <section data-panel="audit" class="panel p-6 hidden overflow-x-auto">
+    <h2 class="font-display text-lg font-semibold mb-4">Audit log</h2>
+    <table class="pc-table">
+      <thead><tr><th>Date</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
+      <tbody id="auditBody"></tbody>
+    </table>
+  </section>
+
+  <!-- Settings tab -->
+  <section data-panel="settings" class="panel p-6 hidden">
+    <h2 class="font-display text-lg font-semibold mb-4">Commission rate</h2>
+    <form id="commissionForm" class="flex gap-2 items-center max-w-xs">
+      <input id="commissionPercent" type="number" min="0" max="100" step="0.1" placeholder="%" class="field" />
+      <button type="submit" class="btn btn-primary">Update</button>
+    </form>
+    <p class="text-xs text-slate-500 mt-2">Applies to new payments going forward. Existing payments keep the rate captured at time of order creation.</p>
+  </section>
+
+</main>
+
+<!-- User detail drawer -->
+<div id="userDrawer" class="fixed inset-0 bg-black/40 hidden items-start justify-center z-50 p-4 overflow-y-auto">
+  <div class="panel p-6 w-full max-w-2xl my-8">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <h3 id="udName" class="font-display font-semibold text-xl"></h3>
+        <p id="udEmail" class="text-sm text-slate-500"></p>
+      </div>
+      <button id="closeDrawer" class="btn btn-ghost btn-sm">Close</button>
+    </div>
+    <div id="udBadges" class="flex flex-wrap gap-2 mb-5"></div>
+
+    <div class="flex flex-wrap gap-2 mb-6">
+      <select id="udRoleSelect" class="field w-auto">
+        <option value="influencer">Creator</option>
+        <option value="brand">Brand</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button id="udSaveRole" class="btn btn-outline btn-sm">Change role</button>
+      <button id="udToggleActive" class="btn btn-outline btn-sm"></button>
+      <button id="udDelete" class="btn btn-danger btn-sm">Delete account</button>
+    </div>
+
+    <div id="udSections" class="space-y-5"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, signOut } from '/js/firebase-config.js';
+  import { api, requireLogin, showToast } from '/js/api.js';
+
+  requireLogin(async () => {
+    await loadOverview();
+    await loadUsers();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await signOut(auth);
+    window.location.href = '/login.html';
+  });
+
+  /* ---------- Tabs ---------- */
+  const loaders = {
+    users: loadUsers,
+    payments: loadPayments,
+    withdrawals: loadWithdrawals,
+    transactions: loadTransactions,
+    reports: loadReports,
+    audit: loadAuditLog,
+    settings: loadSettings,
+  };
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('[data-panel]').forEach((p) => p.classList.add('hidden'));
+      document.querySelector(`[data-panel="${btn.dataset.tab}"]`).classList.remove('hidden');
+      loaders[btn.dataset.tab]?.();
+    });
+  });
+
+  async function loadOverview() {
+    try {
+      const ov = await api('/admin/overview');
+      document.getElementById('ovCollected').textContent = `₹${ov.totalCollected.toFixed(2)}`;
+      document.getElementById('ovCommission').textContent = `₹${ov.totalCommission.toFixed(2)}`;
+      document.getElementById('ovPending').textContent = ov.pendingWithdrawals;
+      document.getElementById('ovUsers').textContent = ov.totalUsers;
+      document.getElementById('ovActive').textContent = ov.activeUsers;
+      document.getElementById('ovReports').textContent = ov.openReports;
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  /* ---------- Users ---------- */
+  let userFilterTimer;
+  ['userSearch', 'userRoleFilter', 'userStatusFilter'].forEach((id) => {
+    document.getElementById(id).addEventListener('input', () => {
+      clearTimeout(userFilterTimer);
+      userFilterTimer = setTimeout(loadUsers, 250);
+    });
+  });
+
+  async function loadUsers() {
+    const container = document.getElementById('usersList');
+    try {
+      const params = new URLSearchParams();
+      const search = document.getElementById('userSearch').value.trim();
+      const role = document.getElementById('userRoleFilter').value;
+      const status = document.getElementById('userStatusFilter').value;
+      if (search) params.set('search', search);
+      if (role) params.set('role', role);
+      if (status) params.set('status', status);
+
+      const { users } = await api(`/admin/users?${params.toString()}`);
+      container.innerHTML = users.length ? users.map((u) => `
+        <div class="flex items-center justify-between border-b py-2.5 text-sm" style="border-color:var(--line)">
+          <div>
+            <span class="font-medium">${escapeHtml(u.displayName || u.email)}</span>
+            <span class="text-slate-400 ml-2 text-xs">${u.role}</span>
+            <span class="stamp stamp-${u.active === false ? 'deactivated' : 'active'} ml-2">${u.active === false ? 'deactivated' : 'active'}</span>
+          </div>
+          <button class="viewBtn btn btn-outline btn-sm" data-id="${u.id}">View</button>
+        </div>`).join('') : '<p class="empty-state">No users match those filters.</p>';
+
+      container.querySelectorAll('.viewBtn').forEach((btn) =>
+        btn.addEventListener('click', () => openUserDrawer(btn.dataset.id)));
+    } catch (err) {
+      container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  let currentDrawerUid = null;
+
+  async function openUserDrawer(id) {
+    const drawer = document.getElementById('userDrawer');
+    drawer.classList.remove('hidden');
+    drawer.classList.add('flex');
+    document.getElementById('udSections').innerHTML = '<p class="empty-state">Loading…</p>';
+
+    try {
+      const data = await api(`/admin/users/${id}`);
+      currentDrawerUid = id;
+      document.getElementById('udName').textContent = data.user.displayName || data.user.email;
+      document.getElementById('udEmail').textContent = data.user.email;
+      document.getElementById('udRoleSelect').value = data.user.role;
+      document.getElementById('udToggleActive').textContent = data.user.active === false ? 'Reactivate' : 'Deactivate';
+      document.getElementById('udToggleActive').dataset.active = data.user.active !== false;
+
+      document.getElementById('udBadges').innerHTML = `
+        <span class="stamp stamp-${data.user.role === 'admin' ? 'accepted' : data.user.role === 'brand' ? 'open' : 'paid'}">${data.user.role}</span>
+        <span class="stamp stamp-${data.user.active === false ? 'deactivated' : 'active'}">${data.user.active === false ? 'deactivated' : 'active'}</span>
+        ${data.reportsAgainst.length ? `<span class="stamp stamp-declined">${data.reportsAgainst.length} report(s) against</span>` : ''}
+      `;
+
+      const sections = [];
+
+      if (data.profile) {
+        sections.push(sectionBlock('Profile', `
+          <pre class="font-mono text-xs whitespace-pre-wrap p-3 rounded-lg" style="background:var(--paper)">${escapeHtml(JSON.stringify(data.profile, null, 2))}</pre>
+        `));
+      }
+      if (data.campaigns?.length) {
+        sections.push(sectionBlock('Campaigns', data.campaigns.map((c) => rowLine(escapeHtml(c.title), `₹${c.budget}`, c.status)).join('')));
+      }
+      if (data.requests?.length) {
+        sections.push(sectionBlock('Requests', data.requests.map((r) => rowLine(`₹${r.amount}`, escapeHtml(r.message || ''), r.status)).join('')));
+      }
+      if (data.payments?.length) {
+        sections.push(sectionBlock('Payments', data.payments.map((p) => rowLine(`₹${p.amount}`, `share ₹${p.influencerShare}`, p.status)).join('')));
+      }
+      if (data.withdrawals?.length) {
+        sections.push(sectionBlock('Withdrawals', data.withdrawals.map((w) => rowLine(`₹${w.amount}`, '', w.status)).join('')));
+      }
+      if (data.reportsAgainst?.length) {
+        sections.push(sectionBlock('Reports filed against this user', data.reportsAgainst.map((r) => rowLine(escapeHtml(r.reason), '', r.status)).join('')));
+      }
+
+      document.getElementById('udSections').innerHTML = sections.length ? sections.join('') : '<p class="empty-state">No activity yet.</p>';
+    } catch (err) {
+      document.getElementById('udSections').innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  function sectionBlock(title, rows) {
+    return `<div><h4 class="font-display font-semibold text-sm mb-2">${title}</h4><div class="space-y-1">${rows}</div></div>`;
+  }
+  function rowLine(a, b, status) {
+    return `<div class="flex items-center justify-between text-xs border-b py-1.5" style="border-color:var(--line)">
+      <span>${a}${b ? ' · ' + b : ''}</span>
+      ${status ? `<span class="stamp stamp-${status}">${status}</span>` : ''}
+    </div>`;
+  }
+
+  document.getElementById('closeDrawer').addEventListener('click', () => {
+    document.getElementById('userDrawer').classList.add('hidden');
+  });
+
+  document.getElementById('udSaveRole').addEventListener('click', async () => {
+    try {
+      await api(`/admin/users/${currentDrawerUid}/role`, {
+        method: 'PATCH',
+        body: { role: document.getElementById('udRoleSelect').value },
+      });
+      showToast('Role updated');
+      await openUserDrawer(currentDrawerUid);
+      await loadUsers();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  document.getElementById('udToggleActive').addEventListener('click', async (e) => {
+    const makeActive = e.target.dataset.active !== 'true';
+    try {
+      await api(`/admin/users/${currentDrawerUid}/status`, { method: 'PATCH', body: { active: makeActive } });
+      showToast('User status updated');
+      await openUserDrawer(currentDrawerUid);
+      await loadUsers();
+      await loadOverview();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  document.getElementById('udDelete').addEventListener('click', async () => {
+    if (!confirm('Permanently delete this user? This cannot be undone.')) return;
+    try {
+      await api(`/admin/users/${currentDrawerUid}`, { method: 'DELETE' });
+      showToast('User deleted');
+      document.getElementById('userDrawer').classList.add('hidden');
+      await loadUsers();
+      await loadOverview();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  /* ---------- Payments ---------- */
+  async function loadPayments() {
+    const container = document.getElementById('paymentsList');
+    try {
+      const { payments } = await api('/admin/payments');
+      const relevant = payments.filter(p => p.status === 'paid' || p.status === 'released');
+      container.innerHTML = relevant.length ? relevant.map(p => `
+        <div class="receipt">
+          <div class="receipt-side">
+            <p class="receipt-eyebrow">Total · commission ${p.commissionPercent}%</p>
+            <p class="receipt-amount mt-1">₹${p.amount}</p>
+          </div>
+          <div class="receipt-divider"></div>
+          <div class="receipt-side flex items-center justify-between">
+            <div>
+              <p class="receipt-eyebrow">Creator share</p>
+              <p class="receipt-amount mt-1">₹${p.influencerShare}</p>
+            </div>
+            ${p.status === 'paid' ? `<button class="releaseBtn btn btn-success btn-sm" data-id="${p.id}">Verify &amp; release</button>` : `<span class="stamp stamp-released">released</span>`}
+          </div>
+        </div>`).join('') : '<p class="empty-state">No payments yet.</p>';
+
+      container.querySelectorAll('.releaseBtn').forEach(btn =>
+        btn.addEventListener('click', () => releasePayment(btn.dataset.id)));
+    } catch (err) {
+      container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  async function releasePayment(id) {
+    try {
+      await api(`/admin/payments/${id}/release`, { method: 'PATCH' });
+      showToast('Payment released');
+      await loadPayments();
+      await loadOverview();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  /* ---------- Withdrawals ---------- */
+  async function loadWithdrawals() {
+    const container = document.getElementById('withdrawalsList');
+    try {
+      const { withdrawals } = await api('/admin/withdrawals');
+      container.innerHTML = withdrawals.length ? withdrawals.map(w => `
+        <div class="flex items-center justify-between border-b py-2.5 text-sm" style="border-color:var(--line)">
+          <div>
+            <span class="font-mono font-medium">₹${w.amount}</span>
+            <span class="text-slate-400 ml-2 text-xs">creator: ${w.influencerId}</span>
+          </div>
+          ${w.status === 'pending' ? `
+            <div class="flex gap-2 shrink-0">
+              <button class="approveBtn btn btn-success btn-sm" data-id="${w.id}">Approve</button>
+              <button class="rejectBtn btn btn-danger btn-sm" data-id="${w.id}">Reject</button>
+            </div>` : `<span class="stamp stamp-${w.status}">${w.status}</span>`}
+        </div>`).join('') : '<p class="empty-state">No withdrawal requests.</p>';
+
+      container.querySelectorAll('.approveBtn').forEach(btn =>
+        btn.addEventListener('click', () => reviewWithdrawal(btn.dataset.id, 'approved')));
+      container.querySelectorAll('.rejectBtn').forEach(btn =>
+        btn.addEventListener('click', () => reviewWithdrawal(btn.dataset.id, 'rejected')));
+    } catch (err) {
+      container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  async function reviewWithdrawal(id, status) {
+    try {
+      await api(`/admin/withdrawals/${id}`, { method: 'PATCH', body: { status } });
+      showToast(`Withdrawal ${status}`);
+      await loadWithdrawals();
+      await loadOverview();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  /* ---------- Transaction ledger ---------- */
+  async function loadTransactions() {
+    const body = document.getElementById('transactionsBody');
+    const empty = document.getElementById('transactionsEmpty');
+    try {
+      const { transactions } = await api('/admin/transactions');
+      empty.classList.toggle('hidden', transactions.length > 0);
+      body.innerHTML = transactions.map(t => `
+        <tr>
+          <td class="font-mono text-xs">${new Date(t.createdAt).toLocaleString()}</td>
+          <td>${t.kind}</td>
+          <td class="font-mono">₹${t.amount}</td>
+          <td><span class="stamp stamp-${t.status}">${t.status}</span></td>
+          <td class="text-xs text-slate-500">${t.kind === 'payment' ? `brand ${t.brandId?.slice(0,6)}… → creator ${t.influencerId?.slice(0,6)}…` : `creator ${t.influencerId?.slice(0,6)}…`}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  /* ---------- Reports ---------- */
+  async function loadReports() {
+    const container = document.getElementById('reportsList');
+    try {
+      const { reports } = await api('/admin/reports');
+      container.innerHTML = reports.length ? reports.map(r => `
+        <div class="panel p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-sm">${escapeHtml(r.reason)}</p>
+              <p class="text-xs text-slate-500 mt-1 font-mono">against ${r.againstUid} · filed by ${escapeHtml(r.reportedByEmail || r.reportedBy)}</p>
+            </div>
+            <span class="stamp stamp-${r.status === 'open' ? 'pending' : r.status === 'resolved' ? 'released' : 'declined'}">${r.status}</span>
+          </div>
+          ${r.status === 'open' ? `
+            <div class="flex gap-2 mt-3">
+              <button class="resolveBtn btn btn-success btn-sm" data-id="${r.id}">Resolve</button>
+              <button class="dismissBtn btn btn-outline btn-sm" data-id="${r.id}">Dismiss</button>
+            </div>` : ''}
+        </div>`).join('') : '<p class="empty-state">No reports filed.</p>';
+
+      container.querySelectorAll('.resolveBtn').forEach(btn =>
+        btn.addEventListener('click', () => reviewReport(btn.dataset.id, 'resolved')));
+      container.querySelectorAll('.dismissBtn').forEach(btn =>
+        btn.addEventListener('click', () => reviewReport(btn.dataset.id, 'dismissed')));
+    } catch (err) {
+      container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  async function reviewReport(id, status) {
+    try {
+      await api(`/admin/reports/${id}`, { method: 'PATCH', body: { status } });
+      showToast(`Report ${status}`);
+      await loadReports();
+      await loadOverview();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  /* ---------- Audit log ---------- */
+  async function loadAuditLog() {
+    const body = document.getElementById('auditBody');
+    try {
+      const { logs } = await api('/admin/audit-log');
+      body.innerHTML = logs.length ? logs.map(l => `
+        <tr>
+          <td class="font-mono text-xs">${new Date(l.createdAt).toLocaleString()}</td>
+          <td class="text-xs">${escapeHtml(l.adminEmail || l.adminUid)}</td>
+          <td class="text-xs">${escapeHtml(l.action)}</td>
+          <td class="text-xs font-mono">${l.targetType} ${l.targetId ? '· ' + l.targetId.slice(0, 8) + '…' : ''}</td>
+          <td class="text-xs text-slate-500">${escapeHtml(JSON.stringify(l.details || {}))}</td>
+        </tr>
+      `).join('') : '<tr><td colspan="5" class="empty-state">No admin actions logged yet.</td></tr>';
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  /* ---------- Settings ---------- */
+  async function loadSettings() {
+    try {
+      const { percent } = await api('/admin/commission');
+      document.getElementById('commissionPercent').value = percent;
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  document.getElementById('commissionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/admin/commission', {
+        method: 'PATCH',
+        body: { percent: Number(document.getElementById('commissionPercent').value) },
+      });
+      showToast('Commission rate updated');
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>

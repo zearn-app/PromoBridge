@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Log in — PromoConnect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md">
+  <a href="/" class="pc-logo text-xl block text-center mb-6">Promo<span class="dot">•</span>Connect</a>
+
+  <div class="panel p-8">
+    <h1 class="font-display text-2xl font-semibold mb-1">Welcome back</h1>
+    <p class="text-sm text-slate-500 mb-6">Log in to your ledger.</p>
+
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="field-label" for="email">Email</label>
+        <input id="email" type="email" placeholder="you@example.com" required class="field" />
+      </div>
+      <div>
+        <label class="field-label" for="password">Password</label>
+        <input id="password" type="password" placeholder="••••••••" required class="field" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Log in</button>
+    </form>
+
+    <div class="my-5 flex items-center gap-3 text-xs text-slate-400">
+      <div class="h-px bg-slate-200 flex-1"></div> OR <div class="h-px bg-slate-200 flex-1"></div>
+    </div>
+
+    <button id="googleBtn" class="btn btn-outline btn-block">Continue with Google</button>
+
+    <p class="mt-6 text-sm text-center text-slate-500">
+      New here? <a href="/signup.html" class="font-medium" style="color:var(--brass-dark)">Create an account</a>
+    </p>
+    <p id="errorMsg" class="mt-3 text-sm text-center" style="color:var(--brick)"></p>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword } from '/js/firebase-config.js';
+  import { api } from '/js/api.js';
+
+  async function routeByRole() {
+    try {
+      const { user } = await api('/auth/me');
+      if (user.role === 'admin') window.location.href = '/pages/admin-dashboard.html';
+      else if (user.role === 'brand') window.location.href = '/pages/brand-dashboard.html';
+      else window.location.href = '/pages/influencer-dashboard.html';
+    } catch (err) {
+      document.getElementById('errorMsg').textContent =
+        'No profile found for this account. Please sign up first.';
+    }
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      await routeByRole();
+    } catch (err) {
+      document.getElementById('errorMsg').textContent = err.message;
+    }
+  });
+
+  document.getElementById('googleBtn').addEventListener('click', async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      await routeByRole();
+    } catch (err) {
+      document.getElementById('errorMsg').textContent = err.message;
+    }
+  });
+</script>
+</body>
+</html>
