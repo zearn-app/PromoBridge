@@ -47,8 +47,19 @@
 </div>
 
 <script type="module">
-  import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword } from '/js/firebase-config.js';
+  import { auth, googleProvider, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword } from '/js/firebase-config.js';
   import { api } from '/js/api.js';
+
+  const GOOGLE_ERROR_MESSAGES = {
+    'auth/unauthorized-domain': 'This site\'s domain isn\'t authorized for Google sign-in yet. In Firebase Console → Authentication → Settings → Authorized domains, add this exact domain.',
+    'auth/operation-not-allowed': 'Google sign-in isn\'t enabled for this project. In Firebase Console → Authentication → Sign-in method, enable Google.',
+    'auth/popup-blocked': 'Your browser blocked the Google sign-in popup. Please try again.',
+    'auth/cancelled-popup-request': 'Google sign-in was cancelled.',
+  };
+
+  function googleErrorMessage(err) {
+    return GOOGLE_ERROR_MESSAGES[err.code] || err.message;
+  }
 
   async function routeByRole() {
     try {
@@ -60,6 +71,19 @@
         'No profile found for this account. Please sign up first.';
     }
   }
+
+  // On page load, check whether we're returning from a Google redirect
+  // (signInWithRedirect navigates away and back, rather than opening a
+  // popup — popups are unreliable on mobile browsers, so this is the
+  // flow Google recommends there).
+  (async function checkRedirectResult() {
+    try {
+      const result = await getRedirectResult(auth);
+      if (result) await routeByRole();
+    } catch (err) {
+      document.getElementById('errorMsg').textContent = googleErrorMessage(err);
+    }
+  })();
 
   document.getElementById('togglePassword').addEventListener('click', () => {
     const input = document.getElementById('password');
@@ -85,10 +109,11 @@
 
   document.getElementById('googleBtn').addEventListener('click', async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
-      await routeByRole();
+      await signInWithRedirect(auth, googleProvider);
+      // Browser navigates away here; checkRedirectResult() picks up
+      // the result when the page reloads after Google sends us back.
     } catch (err) {
-      document.getElementById('errorMsg').textContent = err.message;
+      document.getElementById('errorMsg').textContent = googleErrorMessage(err);
     }
   });
 </script>
