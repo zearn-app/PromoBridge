@@ -405,6 +405,24 @@ body.has-bottom-nav { padding-bottom: 4.2rem; }
   display: block;
 }
 
+/* ---------- Password visibility toggle ---------- */
+.password-toggle {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
+  padding: 0.25rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.password-toggle:hover { color: var(--ink); }
+.password-toggle svg { width: 18px; height: 18px; }
+
 /* ---------- Hero signature: ledger stamp mark ---------- */
 .stamp-mark {
   display: inline-flex;
