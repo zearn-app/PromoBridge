@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Withdrawals — PromoConnect</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body class="min-h-screen">
+
+<header class="pc-nav sticky top-0 z-40">
+  <nav class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+    <a href="/pages/home.html" class="pc-logo text-xl">Promo<span class="dot">•</span>Connect</a>
+    <a href="/pages/profile.html" class="pc-navlink">&larr; Back to profile</a>
+  </nav>
+</header>
+
+<main class="max-w-2xl mx-auto px-4 py-8 space-y-8">
+  <h1 class="font-display text-2xl font-semibold">Withdrawals</h1>
+
+  <!-- Balance -->
+  <section class="grid grid-cols-3 gap-4">
+    <div class="stat-tile">
+      <p class="stat-label">Available</p>
+      <p id="statAvailable" class="stat-value">–</p>
+    </div>
+    <div class="stat-tile">
+      <p class="stat-label">Pending review</p>
+      <p id="statPendingReview" class="stat-value">–</p>
+    </div>
+    <div class="stat-tile">
+      <p class="stat-label">Total withdrawn</p>
+      <p id="statWithdrawn" class="stat-value">–</p>
+    </div>
+  </section>
+
+  <!-- Not-an-influencer notice -->
+  <section id="notInfluencerNotice" class="panel p-6 hidden">
+    <p class="text-sm text-slate-600">Withdrawals are only available for creator accounts.</p>
+  </section>
+
+  <!-- Request form -->
+  <section id="withdrawSection" class="panel p-6">
+    <h2 class="font-display text-lg font-semibold mb-1">Request a withdrawal</h2>
+    <p class="text-xs text-slate-500 mb-4">Reviewed and transferred manually by the admin once approved.</p>
+    <form id="withdrawForm" class="flex flex-wrap gap-3">
+      <input id="withdrawAmount" type="number" min="1" step="0.01" placeholder="Amount (₹)" required class="field flex-1 min-w-[160px]" />
+      <button type="submit" class="btn btn-brass">Request withdrawal</button>
+    </form>
+    <p id="withdrawError" class="text-xs mt-2" style="color:var(--brick)"></p>
+  </section>
+
+  <!-- History -->
+  <section class="panel p-6">
+    <h2 class="font-display text-lg font-semibold mb-4">Withdrawal history</h2>
+    <div id="withdrawalsList" class="space-y-2"><p class="empty-state">Loading…</p></div>
+  </section>
+</main>
+
+<script type="module">
+  import { api, requireLogin, showToast } from '/js/api.js';
+
+  let availableBalance = 0;
+
+  requireLogin(async () => {
+    const { user } = await api('/auth/me');
+    if (user.role !== 'influencer') {
+      document.getElementById('withdrawSection').classList.add('hidden');
+      document.getElementById('notInfluencerNotice').classList.remove('hidden');
+      return;
+    }
+    await loadBalance();
+    await loadWithdrawals();
+  });
+
+  async function loadBalance() {
+    try {
+      const { payments } = await api('/payments/mine/list');
+      const { withdrawals } = await api('/payments/withdraw/mine');
+
+      const released = payments.filter(p => p.status === 'released').reduce((s, p) => s + p.influencerShare, 0);
+      const withdrawnOrPending = withdrawals
+        .filter(w => w.status === 'approved' || w.status === 'pending')
+        .reduce((s, w) => s + w.amount, 0);
+      const totalWithdrawn = withdrawals.filter(w => w.status === 'approved').reduce((s, w) => s + w.amount, 0);
+      const pendingReview = withdrawals.filter(w => w.status === 'pending').reduce((s, w) => s + w.amount, 0);
+
+      availableBalance = Math.max(0, released - withdrawnOrPending);
+
+      document.getElementById('statAvailable').textContent = `₹${availableBalance.toFixed(2)}`;
+      document.getElementById('statPendingReview').textContent = `₹${pendingReview.toFixed(2)}`;
+      document.getElementById('statWithdrawn').textContent = `₹${totalWithdrawn.toFixed(2)}`;
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function loadWithdrawals() {
+    const container = document.getElementById('withdrawalsList');
+    try {
+      const { withdrawals } = await api('/payments/withdraw/mine');
+      container.innerHTML = withdrawals.length ? withdrawals.map(w => `
+        <div class="flex items-center justify-between border-b py-2.5 text-sm" style="border-color:var(--line)">
+          <div>
+            <span class="font-mono font-medium">₹${w.amount}</span>
+            <span class="text-xs text-slate-400 ml-2 font-mono">${new Date(w.createdAt).toLocaleDateString()}</span>
+          </div>
+          <span class="stamp stamp-${w.status}">${w.status}</span>
+        </div>`).join('') : '<p class="empty-state">No withdrawal requests yet.</p>';
+    } catch (err) {
+      container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
+    }
+  }
+
+  document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('withdrawError');
+    errorEl.textContent = '';
+    const amount = Number(document.getElementById('withdrawAmount').value);
+
+    if (amount > availableBalance) {
+      errorEl.textContent = `You can withdraw up to ₹${availableBalance.toFixed(2)} right now.`;
+      return;
+    }
+
+    try {
+      await api('/payments/withdraw', { method: 'POST', body: { amount } });
+      showToast('Withdrawal request submitted');
+      e.target.reset();
+      await loadBalance();
+      await loadWithdrawals();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+</script>
+</body>
+</html>
