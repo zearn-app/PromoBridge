@@ -23,7 +23,12 @@
       </div>
       <div>
         <label class="field-label" for="password">Password</label>
-        <input id="password" type="password" placeholder="••••••••" required class="field" />
+        <div class="relative">
+          <input id="password" type="password" placeholder="••••••••" required class="field pr-12" />
+          <button type="button" id="togglePassword" class="password-toggle" aria-label="Show password">
+            <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
       </div>
       <button type="submit" class="btn btn-primary btn-block">Log in</button>
     </form>
@@ -55,6 +60,16 @@
         'No profile found for this account. Please sign up first.';
     }
   }
+
+  document.getElementById('togglePassword').addEventListener('click', () => {
+    const input = document.getElementById('password');
+    const showing = input.type === 'text';
+    input.type = showing ? 'password' : 'text';
+    document.getElementById('togglePassword').setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    document.getElementById('eyeIcon').innerHTML = showing
+      ? '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3"/>'
+      : '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18" stroke-linecap="round"/>';
+  });
 
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
