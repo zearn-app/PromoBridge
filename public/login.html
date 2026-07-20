@@ -22,7 +22,10 @@
         <input id="email" type="email" placeholder="you@example.com" required class="field" />
       </div>
       <div>
-        <label class="field-label" for="password">Password</label>
+        <div class="flex items-center justify-between">
+          <label class="field-label" for="password">Password</label>
+          <button type="button" id="forgotPasswordLink" class="text-xs font-medium mb-1" style="color:var(--brass-dark)">Forgot password?</button>
+        </div>
         <div class="relative">
           <input id="password" type="password" placeholder="••••••••" required class="field pr-12" />
           <button type="button" id="togglePassword" class="password-toggle" aria-label="Show password">
@@ -46,8 +49,24 @@
   </div>
 </div>
 
+<!-- Forgot password modal -->
+<div id="forgotModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+  <div class="panel p-6 w-full max-w-sm">
+    <h3 class="font-display font-semibold text-lg mb-1">Reset your password</h3>
+    <p class="text-xs text-slate-500 mb-4">Enter your account email — we'll send a reset link to it.</p>
+    <form id="forgotForm" class="space-y-3">
+      <input id="forgotEmail" type="email" placeholder="you@example.com" required class="field" />
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary flex-1">Send reset link</button>
+        <button type="button" id="closeForgotModal" class="btn btn-outline flex-1">Cancel</button>
+      </div>
+      <p id="forgotMsg" class="text-xs text-center"></p>
+    </form>
+  </div>
+</div>
+
 <script type="module">
-  import { auth, googleProvider, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword } from '/js/firebase-config.js';
+  import { auth, googleProvider, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, sendPasswordResetEmail } from '/js/firebase-config.js';
   import { api } from '/js/api.js';
 
   const GOOGLE_ERROR_MESSAGES = {
@@ -93,6 +112,41 @@
     document.getElementById('eyeIcon').innerHTML = showing
       ? '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3"/>'
       : '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18" stroke-linecap="round"/>';
+  });
+
+  document.getElementById('forgotPasswordLink').addEventListener('click', () => {
+    document.getElementById('forgotEmail').value = document.getElementById('email').value.trim();
+    document.getElementById('forgotMsg').textContent = '';
+    document.getElementById('forgotModal').classList.remove('hidden');
+    document.getElementById('forgotModal').classList.add('flex');
+  });
+
+  document.getElementById('closeForgotModal').addEventListener('click', () => {
+    document.getElementById('forgotModal').classList.add('hidden');
+  });
+
+  document.getElementById('forgotForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgotEmail').value.trim();
+    const msgEl = document.getElementById('forgotMsg');
+    msgEl.style.color = '';
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      msgEl.style.color = 'var(--ledger-green)';
+      msgEl.textContent = 'If an account exists for that email, a reset link is on its way — check your inbox.';
+    } catch (err) {
+      // Don't reveal whether an email is registered — show the same
+      // success message for "user not found" as for a real send, and
+      // only surface real input errors (like a malformed address).
+      if (err.code === 'auth/user-not-found') {
+        msgEl.style.color = 'var(--ledger-green)';
+        msgEl.textContent = 'If an account exists for that email, a reset link is on its way — check your inbox.';
+      } else {
+        msgEl.style.color = 'var(--brick)';
+        msgEl.textContent = err.code === 'auth/invalid-email' ? 'Please enter a valid email address.' : err.message;
+      }
+    }
   });
 
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
