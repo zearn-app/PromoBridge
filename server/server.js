@@ -33,6 +33,9 @@ app.use('/api/campaigns', require('./routes/campaigns'));
 app.use('/api/requests', require('./routes/requests'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/reports', require('./routes/reports'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/messages', require('./routes/messages'));
+app.use('/api/search', require('./routes/search'));
 app.use('/api/admin', require('./routes/admin'));
 
 // Global error handler — logs the full error server-side always, and
