@@ -34,15 +34,11 @@
   </section>
 
   <section class="panel p-6">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-2">
       <h2 class="font-display text-lg font-semibold">Withdrawals</h2>
-      <a href="/pages/profile.html" class="text-xs" style="color:var(--brass-dark)">Manage profile &rarr;</a>
+      <a href="/pages/withdrawals.html" class="btn btn-brass btn-sm">Manage withdrawals</a>
     </div>
-    <form id="withdrawForm" class="flex flex-wrap gap-3 max-w-md mb-5">
-      <input id="withdrawAmount" type="number" min="1" step="0.01" placeholder="Amount (₹)" required class="field flex-1" />
-      <button type="submit" class="btn btn-brass">Request withdrawal</button>
-    </form>
-    <div id="withdrawalsList" class="space-y-2"></div>
+    <p class="text-sm text-slate-500">Request payouts and see your withdrawal history on the dedicated Withdrawals page.</p>
   </section>
 </main>
 
@@ -51,7 +47,6 @@
 
   requireLogin(async () => {
     await loadStats();
-    await loadWithdrawals();
   });
 
   const STAGES = ['pending', 'accepted', 'in_progress', 'completed', 'declined', 'cancelled'];
@@ -81,32 +76,6 @@
       showToast(err.message, true);
     }
   }
-
-  async function loadWithdrawals() {
-    const container = document.getElementById('withdrawalsList');
-    try {
-      const { withdrawals } = await api('/payments/withdraw/mine');
-      container.innerHTML = withdrawals.length ? withdrawals.map(w => `
-        <div class="flex items-center justify-between border-b py-2 text-sm" style="border-color:var(--line)">
-          <span class="font-mono">₹${w.amount}</span>
-          <span class="stamp stamp-${w.status}">${w.status}</span>
-        </div>`).join('') : '<p class="empty-state">No withdrawal requests yet.</p>';
-    } catch (err) {
-      container.innerHTML = `<p class="empty-state" style="color:var(--brick)">${err.message}</p>`;
-    }
-  }
-
-  document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    try {
-      await api('/payments/withdraw', { method: 'POST', body: { amount: Number(document.getElementById('withdrawAmount').value) } });
-      showToast('Withdrawal request submitted');
-      e.target.reset();
-      await loadWithdrawals();
-    } catch (err) {
-      showToast(err.message, true);
-    }
-  });
 </script>
 </body>
 </html>
