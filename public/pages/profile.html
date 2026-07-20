@@ -20,7 +20,10 @@
 
   <div class="flex items-center justify-between">
     <h1 class="font-display text-2xl font-semibold">Your profile</h1>
-    <a id="dashboardLink" href="#" class="btn btn-outline btn-sm">View analytics dashboard</a>
+    <div class="flex gap-2">
+      <a id="withdrawLink" href="/pages/withdrawals.html" class="btn btn-brass btn-sm hidden">Withdraw earnings</a>
+      <a id="dashboardLink" href="#" class="btn btn-outline btn-sm">View analytics dashboard</a>
+    </div>
   </div>
 
   <!-- Stats -->
@@ -114,6 +117,7 @@
     document.getElementById('dashboardLink').href = role === 'brand' ? '/pages/brand-dashboard.html' : '/pages/influencer-dashboard.html';
 
     if (role === 'influencer') {
+      document.getElementById('withdrawLink').classList.remove('hidden');
       document.getElementById('influencerForm').classList.remove('hidden');
       document.getElementById('statLabel1').textContent = 'Followers';
       document.getElementById('statLabel2').textContent = 'Earnings released';
