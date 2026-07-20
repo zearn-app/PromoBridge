@@ -56,11 +56,23 @@
 </div>
 
 <script type="module">
-  import { auth, googleProvider, signInWithPopup, createUserWithEmailAndPassword } from '/js/firebase-config.js';
+  import { auth, googleProvider, signInWithRedirect, getRedirectResult, createUserWithEmailAndPassword } from '/js/firebase-config.js';
   import { api, showToast } from '/js/api.js';
 
+  const ROLE_STORAGE_KEY = 'promoconnect_signup_role';
   const params = new URLSearchParams(window.location.search);
   let selectedRole = params.get('role') === 'brand' ? 'brand' : 'influencer';
+
+  const GOOGLE_ERROR_MESSAGES = {
+    'auth/unauthorized-domain': 'This site\'s domain isn\'t authorized for Google sign-in yet. In Firebase Console → Authentication → Settings → Authorized domains, add this exact domain.',
+    'auth/operation-not-allowed': 'Google sign-in isn\'t enabled for this project. In Firebase Console → Authentication → Sign-in method, enable Google.',
+    'auth/popup-blocked': 'Your browser blocked the Google sign-in popup. Please try again.',
+    'auth/cancelled-popup-request': 'Google sign-in was cancelled.',
+  };
+
+  function googleErrorMessage(err) {
+    return GOOGLE_ERROR_MESSAGES[err.code] || err.message;
+  }
 
   function paintRoleButtons() {
     document.querySelectorAll('.role-btn').forEach((btn) => {
@@ -114,18 +126,39 @@
 
   document.getElementById('googleBtn').addEventListener('click', async () => {
     try {
-      const cred = await signInWithPopup(auth, googleProvider);
-      const idToken = await cred.user.getIdToken();
+      // The page fully reloads on redirect, so the in-memory selectedRole
+      // variable won't survive — stash it and restore after we're back.
+      sessionStorage.setItem(ROLE_STORAGE_KEY, selectedRole);
+      await signInWithRedirect(auth, googleProvider);
+    } catch (err) {
+      document.getElementById('errorMsg').textContent = googleErrorMessage(err);
+    }
+  });
+
+  // On page load, check whether we're returning from a Google redirect.
+  // signInWithRedirect (rather than a popup) is the flow Google
+  // recommends for mobile browsers, where popups are often blocked or
+  // silently fail.
+  (async function checkRedirectResult() {
+    try {
+      const result = await getRedirectResult(auth);
+      if (!result) return; // normal page load, not returning from Google
+
+      const savedRole = sessionStorage.getItem(ROLE_STORAGE_KEY);
+      if (savedRole) selectedRole = savedRole;
+      sessionStorage.removeItem(ROLE_STORAGE_KEY);
+
+      const idToken = await result.user.getIdToken();
       try {
-        await registerOnBackend(idToken, cred.user.displayName || 'New User');
+        await registerOnBackend(idToken, result.user.displayName || 'New User');
       } catch (regErr) {
         if (!regErr.message.includes('already registered')) throw regErr;
       }
       redirectToDashboard();
     } catch (err) {
-      document.getElementById('errorMsg').textContent = err.message;
+      document.getElementById('errorMsg').textContent = googleErrorMessage(err);
     }
-  });
+  })();
 </script>
 </body>
 </html>
